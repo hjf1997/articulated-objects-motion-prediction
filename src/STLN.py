@@ -22,7 +22,7 @@ class STLN(nn.Module):
         # [batch, config.input_window_size-1, input_size/bone_dim*hidden_size]
         h = torch.matmul(encoder_inputs, self.weights_in) + self.bias_in
         # [batch, config.input_window_size-1, nbones, hidden_size]
-        h = h.view([h.shape[0], h.shape[1], int(h.shape[2]/self.config.bone_dim), self.config.bone_dim)
+        h = h.view([h.shape[0], h.shape[1], int(h.shape[2]/self.config.bone_dim), self.config.bone_dim])
 
 
 class STLNCell(nn.Module):
