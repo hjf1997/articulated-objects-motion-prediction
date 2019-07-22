@@ -5,6 +5,31 @@ import numpy as np
 import scipy.io as sio
 
 
+class FormatData(object):
+
+    def __init__(self, config):
+        self.config = config
+
+    def __call__(self, sample):
+
+        total_frames = self.config.input_window_size + self.config.output_window_size
+
+        #encoder_inputs = np.zeros((self.config.input_window_size - 1, self.config.input_size), dtype=float)
+        #decoder_inputs = np.zeros((self.config.output_window_size, self.config.input_size), dtype=float)
+        #decoder_outputs = np.zeros((self.config.output_window_size, self.config.input_size), dtype=float)
+
+        video_frames = sample.shape[0]
+        idx = np.random.randint(25, video_frames-total_frames)
+
+        data_seq = sample[idx:idx+total_frames, :]
+        encoder_inputs = data_seq[:self.config.input_window_size-1, :]
+        # 最后一个弃掉了,这里代码还可以精简
+        decoder_inputs = data_seq[self.config.input_window_size-1:
+                                  self.config.input_window_size-1+self.config.output_window_size, :]
+        decoder_outputs = data_seq[self.config.input_window_size:, :]
+        return {'encoder_inputs': encoder_inputs, 'decoder_inputs': decoder_inputs, 'decoder_outputs': decoder_outputs}
+
+
 class LieTsfm(object):
 
     def __init__(self, config):
@@ -25,7 +50,7 @@ class LieTsfm(object):
         data = np.delete(data, [self.config.skip[:-1]+1], axis=1)
         data = np.around(data, 5)
         data = data.reshape(data.shape[0], -1)
-        return {'data': data}
+        return data
 
 
 class HumanDataset(Dataset):
@@ -35,6 +60,7 @@ class HumanDataset(Dataset):
         self.config = config
         self.train = train
         self.lie_tsfm = LieTsfm(config)
+        self.formatdata = FormatData(config)
         if config.datatype == 'lie':
             train_path = './data/Human/Train/train_lie/'
             tail = '_lie.mat'
@@ -72,7 +98,7 @@ class HumanDataset(Dataset):
             sample = self.lie_tsfm(self.data[idx])
         elif self.config.datatype == 'xyz':
             pass
-
+        sample = self.formatdata(sample)
         return sample
 
 

@@ -19,8 +19,8 @@ class DatasetChooser(object):
             rawdata = sio.loadmat(bone_length_path)
             rawdata = rawdata[list(rawdata.keys())[3]]
             bone = self.cal_bone_length(rawdata)
-            data = loader.HumanDataset(self.config, train=self.train)
-            self.config.input_size = data[1]['data'].shape[1]
+            data = loader.HumanDataset(self.config, train=train)
+            self.config.input_size = data[1]['encoder_inputs'].shape[1]
         elif self.dataset == 'Fish':
             pass
         elif self.dataset == 'Mouse':
@@ -30,8 +30,8 @@ class DatasetChooser(object):
 
         return data, bone
 
-    def __call__(self):
-        return self.choose_dataset()
+    def __call__(self, train=True):
+        return self.choose_dataset(train)
 
     def cal_bone_length(self, rawdata):
 
