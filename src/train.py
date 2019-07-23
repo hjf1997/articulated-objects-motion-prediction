@@ -19,9 +19,9 @@ def train(config):
     # generate data loader
     choose = DatasetChooser(config)
     train_dataset, bone_length = choose(train=True)
-    train_loader = DataLoader(train_dataset, batch=config.batch_size, shuffle=True)
+    train_loader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True)
     test_dataset, _ = choose(train=False)
-    test_loader = DataLoader(test_dataset, batch=config.batch_size, shuffle=True)
+    test_loader = DataLoader(test_dataset, batch_size=config.batch_size, shuffle=True)
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print('Device {} will be used'.format(device))
