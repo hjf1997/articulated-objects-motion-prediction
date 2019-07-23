@@ -15,6 +15,7 @@ class STLN(nn.Module):
         super().__init__()
         self.config = config
         self.stln_cell = STLNCell(config)
+        self.st_lstm = STLSTM(config)
         self.weights_in = torch.nn.Parameter(torch.randn(config.input_size,
                                       int(config.input_size/config.bone_dim*config.hidden_size)))
         self.bias_in = torch.nn.Parameter(torch.randn(int(config.input_size/config.bone_dim*config.hidden_size)))
@@ -30,8 +31,8 @@ class STLN(nn.Module):
         p = h.clone()
 
         hidden_states, cell_states, global_t_state, global_s_state = self.stln_cell(h, c_h, p)
-
-        return hidden_states, cell_states, global_t_state, global_s_state
+        self.st_lstm(hidden_states[-1], cell_states[-1], global_t_state[-1], global_s_state[-1])
+        #return hidden_states, cell_states, global_t_state, global_s_state
 
 
 class STLNCell(nn.Module):
@@ -250,10 +251,15 @@ class STLNCell(nn.Module):
 
 class STLSTM(nn.Module):
 
-    def __init__(self):
+    def __init__(self, config):
         super().__init__()
+        self.config = config
+        # recurrent 1st
 
-    def forward(self, *input):
+        # recurrent 2nd
+        # recurrent 3rd
+
+    def forward(self, hidden_states, cell_states, global_t_state, global_s_state):
         pass
 
 
