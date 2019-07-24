@@ -33,7 +33,7 @@ class STLN(nn.Module):
         hidden_states, cell_states, global_t_state, global_s_state = self.stln_cell(h, c_h, p)
 
         # self.st_lstm(hidden_states[-1], cell_states[-1], global_t_state[-1], global_s_state[-1])
-        # return hidden_states, cell_states, global_t_state, global_s_state
+        return hidden_states, cell_states, global_t_state, global_s_state
 
 
 class STLNCell(nn.Module):
@@ -256,33 +256,23 @@ class STLSTM(nn.Module):
         super().__init__()
         self.config = config
         self.nbones = nbones
-        recurrent_cell_box = []
-        # recurrent_weight_t_box = []
-        # recurrent_bias_t_box = []
-        # recurrent_weight_s_box = []
-        # recurrent_bias_s_box = []
+        recurrent_cell_box = torch.nn.ModuleList()
         if train:
             self.seq_length_out = config.output_window_size
         else:
             self.seq_length_out = config.test_output_window
         for i in range(config.decoder_recurrent_steps):
-            cells = []
-            # w_t = torch.nn.Parameter(torch.randn(nbones, config.hidden_size * 2, config.hidden_size))
-            # b_t = torch.nn.Parameter(torch.randn(nbones, config.hidden_size))
-            # w_s = torch.nn.Parameter(torch.randn(self.seq_length_out, config.hidden_size * 2, config.hidden_size))
-            # b_s = torch.nn.Parameter(torch.randn(self.seq_length_out, config.hidden_size))
+            print("Prepare network for recurrent {}".format(str(i+1)))
+            cells = torch.nn.ModuleList()
             for frame in range(self.seq_length_out):
-                cells_frame = []
+                cells_frame = torch.nn.ModuleList()
                 for bone in range(nbones):
                     cell = STLSTMCell(config)
                     cells_frame.append(cell)
                 cells.append(cells_frame)
             recurrent_cell_box.append(cells)
-            # recurrent_weight_t_box.append(w_t)
-            # recurrent_bias_t_box.append(b_t)
-            # recurrent_weight_s_box.append(w_s)
-            # recurrent_bias_s_box.append(b_s)
         self.recurrent_cell_box = recurrent_cell_box
+        print("Prepare network for finished")
         # self.recurrent_weight_t_box = recurrent_weight_t_box
         # self.recurrent_bias_t_box = recurrent_bias_t_box
         # self.recurrent_weight_s_box = recurrent_weight_s_box
@@ -302,13 +292,14 @@ class STLSTM(nn.Module):
         h[:, 1:, 1:, :] = p
         c_h = torch.zeros(self.config.batch_size, self.seq_length_out + 1, self.nbones + 1, self.config.hidden_size)
         for i in range(self.config.decoder_recurrent_steps):
+            print("Train network at recurrent {}".format(str(i+1)))
             # w_t_i = self.recurrent_weight_t_box[i]
             # b_t_i = self.recurrent_bias_t_box[i]
             # w_s_i = self.recurrent_weight_s_box[i]
             # b_s_i = self.recurrent_bias_s_box[i]
             if i == 0:
                 h_t = hidden_states
-                h_s= hidden_states
+                h_s = hidden_states
             elif i == 1:
                 h_t = torch.cat((global_t_state.unsqueeze(1), hidden_states), dim=1)
                 h_s = hidden_states
@@ -327,6 +318,7 @@ class STLSTM(nn.Module):
                     h[:, frame+1, bone+1, :], c_h[:, frame+1, bone+1, :] \
                         = cell(h[:, frame+1, bone+1, :], h[:, frame, bone+1, :],
                                h[:, frame+1, bone, :], c_h[:, frame, bone+1, :], c_h[:, frame+1, bone, :])
+        print("Train finished")
         return h[:, 1:, 1:, :], c_h[:, 1:, 1:, :]
 
 
@@ -363,7 +355,6 @@ class STLSTMCell(nn.Module):
         self.bc = torch.nn.Parameter(torch.randn(self.config.hidden_size))
 
     def forward(self, x, h_t, h_s, c_t, c_s):
-
         i_n = torch.sigmoid(torch.matmul(x, self.Ui) + torch.matmul(h_t, self.Wti)
                             + torch.matmul(h_s, self.Wsi) + self.bi)
         f_s_n = torch.sigmoid(torch.matmul(x, self.Us) + torch.matmul(h_t, self.Wts)
@@ -375,7 +366,7 @@ class STLSTMCell(nn.Module):
         c_n = torch.tanh(torch.matmul(x, self.Uc) + torch.matmul(h_t, self.Wtc)
                             + torch.matmul(h_s, self.Wsc) + self.bc)
 
-        c_h = (i_n * c_n) + (f_s_n * c_s) + (f_t_n * c_t )
+        c_h = (i_n * c_n) + (f_s_n * c_s) + (f_t_n * c_t)
         h = o_n * torch.tanh(c_h)
 
         return h, c_h
