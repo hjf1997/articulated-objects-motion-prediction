@@ -11,11 +11,11 @@ import torch.nn.functional as F
 
 class STLN(nn.Module):
 
-    def __init__(self, config):
+    def __init__(self, config,train, nbones):
         super().__init__()
         self.config = config
         self.stln_cell = STLNCell(config)
-        self.st_lstm = STLSTM(config)
+        self.st_lstm = STLSTM(config, train, nbones)
         self.weights_in = torch.nn.Parameter(torch.randn(config.input_size,
                                       int(config.input_size/config.bone_dim*config.hidden_size)))
         self.bias_in = torch.nn.Parameter(torch.randn(int(config.input_size/config.bone_dim*config.hidden_size)))
@@ -31,8 +31,9 @@ class STLN(nn.Module):
         p = h.clone()
 
         hidden_states, cell_states, global_t_state, global_s_state = self.stln_cell(h, c_h, p)
-        self.st_lstm(hidden_states[-1], cell_states[-1], global_t_state[-1], global_s_state[-1])
-        #return hidden_states, cell_states, global_t_state, global_s_state
+
+        # self.st_lstm(hidden_states[-1], cell_states[-1], global_t_state[-1], global_s_state[-1])
+        # return hidden_states, cell_states, global_t_state, global_s_state
 
 
 class STLNCell(nn.Module):
@@ -251,16 +252,82 @@ class STLNCell(nn.Module):
 
 class STLSTM(nn.Module):
 
-    def __init__(self, config):
+    def __init__(self, config, train, nbones):
         super().__init__()
         self.config = config
-        # recurrent 1st
+        self.nbones = nbones
+        recurrent_cell_box = []
+        # recurrent_weight_t_box = []
+        # recurrent_bias_t_box = []
+        # recurrent_weight_s_box = []
+        # recurrent_bias_s_box = []
+        if train:
+            self.seq_length_out = config.output_window_size
+        else:
+            self.seq_length_out = config.test_output_window
+        for i in range(config.decoder_recurrent_steps):
+            cells = []
+            # w_t = torch.nn.Parameter(torch.randn(nbones, config.hidden_size * 2, config.hidden_size))
+            # b_t = torch.nn.Parameter(torch.randn(nbones, config.hidden_size))
+            # w_s = torch.nn.Parameter(torch.randn(self.seq_length_out, config.hidden_size * 2, config.hidden_size))
+            # b_s = torch.nn.Parameter(torch.randn(self.seq_length_out, config.hidden_size))
+            for frame in range(self.seq_length_out):
+                cells_frame = []
+                for bone in range(nbones):
+                    cell = STLSTMCell(config)
+                    cells_frame.append(cell)
+                cells.append(cells_frame)
+            recurrent_cell_box.append(cells)
+            # recurrent_weight_t_box.append(w_t)
+            # recurrent_bias_t_box.append(b_t)
+            # recurrent_weight_s_box.append(w_s)
+            # recurrent_bias_s_box.append(b_s)
+        self.recurrent_cell_box = recurrent_cell_box
+        # self.recurrent_weight_t_box = recurrent_weight_t_box
+        # self.recurrent_bias_t_box = recurrent_bias_t_box
+        # self.recurrent_weight_s_box = recurrent_weight_s_box
+        # self.recurrent_bias_s_box = recurrent_bias_s_box
 
-        # recurrent 2nd
-        # recurrent 3rd
+    def forward(self, hidden_states, cell_states, global_t_state, global_s_state, p):
+        """
 
-    def forward(self, hidden_states, cell_states, global_t_state, global_s_state):
-        pass
+        :param hidden_states:  [batch, input_window_size-1, nbones, hidden_size]
+        :param cell_states: [batch, input_window_size-1, nbones, hidden_size]
+        :param global_t_state: [batch,  nbones, hidden_size]
+        :param global_s_state: [batch, input_window_size-1, hidden_size]
+        :param p: [batch, input_window_size-1, nbones, hidden_size]
+        :return:
+        """
+        h = torch.zeros(self.config.batch_size, self.seq_length_out + 1, self.nbones + 1, self.config.hidden_size)
+        h[:, 1:, 1:, :] = p
+        c_h = torch.zeros(self.config.batch_size, self.seq_length_out + 1, self.nbones + 1, self.config.hidden_size)
+        for i in range(self.config.decoder_recurrent_steps):
+            # w_t_i = self.recurrent_weight_t_box[i]
+            # b_t_i = self.recurrent_bias_t_box[i]
+            # w_s_i = self.recurrent_weight_s_box[i]
+            # b_s_i = self.recurrent_bias_s_box[i]
+            if i == 0:
+                h_t = hidden_states
+                h_s= hidden_states
+            elif i == 1:
+                h_t = torch.cat((global_t_state.unsqueeze(1), hidden_states), dim=1)
+                h_s = hidden_states
+            else:
+                h_t = hidden_states
+                h_s = torch.cat((global_s_state.unsqueeze(2), hidden_states), dim=2)
+
+            h[:, 1:, 0, :] = torch.mean(h_s, dim=2)
+            c_h[:, 1:, 0, :] = torch.mean(cell_states, dim=2)
+            h[:, 0, 1:, :] = torch.mean(h_t, dim=1)
+            c_h[:, 0, 1:, :] = torch.mean(cell_states, dim=1)
+
+            for frame in range(self.seq_length_out):
+                for bone in range(self.nbones):
+                    cell = self.recurrent_cell_box[i][frame][bone]
+                    h[:, frame+1, bone+1, :], c_h[:, frame+1, bone+1, :] \
+                        = cell(h[:, frame+1, bone+1, :], h[:, frame, bone+1, :],
+                               h[:, frame+1, bone, :], c_h[:, frame, bone+1, :], c_h[:, frame+1, bone, :])
+        return h[:, 1:, 1:, :], c_h[:, 1:, 1:, :]
 
 
 class STLSTMCell(nn.Module):

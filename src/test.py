@@ -5,7 +5,7 @@ import numpy as np
 import torch
 import config
 import utils
-from STLN import STLN
+from STLN import STLN, STLSTM
 import choose_dataset
 from torch.utils.data import DataLoader
 
@@ -19,5 +19,14 @@ if __name__ == '__main__':
         print(data['encoder_inputs'].shape)
         break
 
-    net = STLN(config)
-    final_hidden_states, final_cell_states, final_global_t_states, final_global_s_states = net(data['encoder_inputs'].float(), None)
+    #net = STLN(config, True, 23)
+    #final_hidden_states, final_cell_states, final_global_t_states, final_global_s_states = net(data['encoder_inputs'].float(), None)
+
+    st_lstm = STLSTM(config, True, 23)
+    hidden_states = torch.randn(8, 10, 23, 16)
+    cell_states = torch.randn(8, 10, 23, 16)
+    global_t_state = torch.randn(8,  23, 16)
+    global_s_state = torch.randn(8, 10, 16)
+    p = torch.randn(8, 10, 23, 16)
+
+    h, c = st_lstm(hidden_states, cell_states, global_t_state, global_s_state, p)
