@@ -24,8 +24,8 @@ class TrainConfig(object):
     early_stop = 10                             # Stop training if validation loss do not improve after these epochs
     keep_prob = 1                               # Keep probability for RNN cell weights
     context_window = 1                          # Context window size in HMR
-    recurrent_steps = 10                        # Number of recurrent steps in HMR
-    decoder_recurrent_steps = 3            # Number of recurrent steps in LS-STLM decoder
+    encoder_recurrent_steps = 3                       # Number of recurrent steps in HMR
+    decoder_recurrent_steps = 2            # Number of recurrent steps in LS-STLM decoder
     bone_dim = 3                                  # dimension of one bone representation
 
     def __init__(self, dataset, datatype, action):
