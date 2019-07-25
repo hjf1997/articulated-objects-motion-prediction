@@ -47,7 +47,8 @@ class LieTsfm(object):
         data[:, 1:, :] = rawdata[:, :, 0:3]
         # 这里wu shuang的代码写错了，除了skip数组的最后一个在原始data中应该索引不到以外
         # 所有都向后面移了一个
-        data = np.delete(data, [self.config.skip[:-1]+1], axis=1)
+        #data = np.delete(data, [self.config.skip[:-1]+1], axis=1)
+        data = np.delete(data, [self.config.skip], axis=1)
         data = np.around(data, 5)
         data = data.reshape(data.shape[0], -1)
         return data
@@ -104,14 +105,44 @@ class HumanDataset(Dataset):
 
 class FishDataset(Dataset):
 
-    def __init__(self):
-        pass
+    def __init__(self, config, train=True):
 
-    def __getitem__(self, index: int):
-        pass
+        self.config = config
+        self.train = train
+        self.lie_tsfm = LieTsfm(config)
+        self.formatdata = FormatData(config)
+        if config.datatype == 'lie':
+            train_path = './data/Fish/Train/train_lie/'
+            tail = '_lie.mat'
+        elif config.datatype == 'xyz':
+            train_path = './data/Fish/Train/train_xyz/'
+            tail = '_xyz.mat'
+        if train:
+            subjects = ['S1', 'S2', 'S3', 'S4', 'S5', 'S7', 'S8']
+        else:
+            subjects = ['S6']
 
-    def __len__(self) :
-        pass
+        set = []
+
+        for id in subjects:
+            filename = train_path + id + tail
+            rawdata = sio.loadmat(filename)
+            rawdata = rawdata[list(rawdata.keys())[3]]
+            set.append(rawdata)
+        self.data = set
+
+    def __getitem__(self, idx):
+
+        if self.config.datatype == 'lie':
+            sample = self.lie_tsfm(self.data[idx])
+        elif self.config.datatype == 'xyz':
+            pass
+        sample = self.formatdata(sample)
+        return sample
+
+    def __len__(self):
+
+        return len(self.data)
 
 
 class MouseDataset(Dataset):

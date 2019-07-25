@@ -16,17 +16,19 @@ class DatasetChooser(object):
         if self.dataset == 'Human':
             bone_length_path = './data/Human/Test/y_test_lie/directions' \
                                '_0_lie.mat'
-            rawdata = sio.loadmat(bone_length_path)
-            rawdata = rawdata[list(rawdata.keys())[3]]
-            bone = self.cal_bone_length(rawdata)
             data = loader.HumanDataset(self.config, train=train)
             self.config.input_size = data[1]['encoder_inputs'].shape[1]
         elif self.dataset == 'Fish':
-            pass
+            bone_length_path = './data/Fish/Test/y_test_lie/test_0_lie.mat'
+            data = loader.FishDataset(self.config, train=train)
+            self.config.input_size = data[0]['encoder_inputs'].shape[1]
         elif self.dataset == 'Mouse':
             pass
         elif self.dataset == 'CSL':
             pass
+        rawdata = sio.loadmat(bone_length_path)
+        rawdata = rawdata[list(rawdata.keys())[3]]
+        bone = self.cal_bone_length(rawdata)
 
         return data, bone
 

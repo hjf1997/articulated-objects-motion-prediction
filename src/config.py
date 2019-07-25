@@ -14,9 +14,9 @@ class TrainConfig(object):
     output_window_size = 10                     # Output window size during training
     test_output_window = 100                    # Output window size during testing. test_output_window is overwritten by test set size when longterm is true
     hidden_size = 16                           # Number of hidden units for HMR
-    batch_size = 8                              # Batch size for training
+    batch_size = 7                              # Batch size for training
     learning_rate = 0.001                       # Learning rate
-    max_epoch = 50                              # Maximum training epochs
+    max_epoch = 500                              # Maximum training epochs
     training_size = 1000                        # Training iterations per epoch
     validation_size = 50                        # Validation iterations per epoch
     restore = False                             # Restore the trained weights or restart training from scratch

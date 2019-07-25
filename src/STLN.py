@@ -21,6 +21,8 @@ class ST_HMR(nn.Module):
         self.weights_in = torch.nn.Parameter(torch.randn(config.input_size,
                                       int(config.input_size/config.bone_dim*config.hidden_size)))
         self.bias_in = torch.nn.Parameter(torch.randn(int(config.input_size/config.bone_dim*config.hidden_size)))
+        self.weights_out = torch.nn.Parameter(torch.randn(int(config.input_size/config.bone_dim*config.hidden_size), config.input_size))
+        self.bias_out = torch.nn.Parameter(torch.randn(config.input_size))
 
     def forward(self, encoder_inputs, decoder_inputs):
 
@@ -43,27 +45,28 @@ class ST_HMR(nn.Module):
         c_g_s = torch.mean(c_h, 2, keepdim=True).expand_as(c_h)
 
         for rec in range(self.config.encoder_recurrent_steps):
-            print("train encoder at rec {}".format(str(rec+1)))
+            #print("train encoder at rec {}".format(str(rec+1)))
             hidden_states, cell_states, global_t_state, global_s_state, g_t, c_g_t, g_s, c_g_s = self.encoder_cell[rec](h, c_h, p, g_t, c_g_t, g_s, c_g_s)
 
         decoder_p = torch.matmul(decoder_inputs, self.weights_in) + self.bias_in
         decoder_p = decoder_p.view([decoder_p.shape[0], decoder_p.shape[1], int(decoder_p.shape[2]/self.config.hidden_size), self.config.hidden_size])
-        h, c_h = self.st_lstm(hidden_states, cell_states, global_t_state, global_s_state, decoder_p)
-        return h, c_h
+        prediction, _ = self.st_lstm(hidden_states, cell_states, global_t_state, global_s_state, decoder_p)
+        prediction = prediction.view([prediction.shape[0], prediction.shape[1], prediction.shape[2]*prediction.shape[3]])
+        prediction = torch.matmul(prediction, self.weights_out) + self.bias_out
+        return prediction
 
 
 class EncoderCell(nn.Module):
 
     def __init__(self, config):
         super().__init__()
-        torch.cuda.manual_seed(971103)
         self.config = config
 
         """h update gates"""
         # input forget gate
         self.Ui = torch.nn.Parameter(torch.randn(self.config.input_window_size-1, self.config.hidden_size, self.config.hidden_size))
         self.Wti = torch.nn.Parameter(torch.randn(self.config.input_window_size-1, self.config.hidden_size*3, self.config.hidden_size))
-        self.Wsi= torch.nn.Parameter(torch.randn(self.config.input_window_size-1, self.config.hidden_size, self.config.hidden_size))
+        self.Wsi = torch.nn.Parameter(torch.randn(self.config.input_window_size-1, self.config.hidden_size, self.config.hidden_size))
         self.Zti = torch.nn.Parameter(torch.randn(self.config.input_window_size-1, self.config.hidden_size, self.config.hidden_size))
         self.Zsi = torch.nn.Parameter(torch.randn(self.config.input_window_size-1, self.config.hidden_size, self.config.hidden_size))
         self.bi = torch.nn.Parameter(torch.randn(self.config.input_window_size-1, 1, self.config.hidden_size))
@@ -287,7 +290,7 @@ class ST_LSTM(nn.Module):
         h[:, 1:, 1:, :] = p
         c_h = torch.zeros(self.config.batch_size, self.seq_length_out + 1, self.nbones + 1, self.config.hidden_size)
         for i in range(self.config.decoder_recurrent_steps):
-            print("Train decoder at rec {}".format(str(i+1)))
+            #print("Train decoder at rec {}".format(str(i+1)))
             if i == 0:
                 h_t = hidden_states
                 h_s = hidden_states
@@ -306,7 +309,7 @@ class ST_LSTM(nn.Module):
                     h[:, frame+1, bone+1, :], c_h[:, frame+1, bone+1, :] \
                         = cell(h[:, frame+1, bone+1, :].clone(), h[:, frame, bone+1, :].clone(),
                                h[:, frame+1, bone, :].clone(), c_h[:, frame, bone+1, :].clone(), c_h[:, frame+1, bone, :].clone())
-        print("Train finished")
+        #print("Train finished")
         return h[:, 1:, 1:, :], c_h[:, 1:, 1:, :]
 
 
@@ -343,6 +346,7 @@ class ST_LSTMCell(nn.Module):
         self.bc = torch.nn.Parameter(torch.randn(self.config.hidden_size))
 
     def forward(self, x, h_t, h_s, c_t, c_s):
+
         i_n = torch.sigmoid(torch.matmul(x, self.Ui) + torch.matmul(h_t, self.Wti) + torch.matmul(h_s, self.Wsi) + self.bi)
         f_s_n = torch.sigmoid(torch.matmul(x, self.Us) + torch.matmul(h_t, self.Wts) + torch.matmul(h_s, self.Wss) + self.bs)
         f_t_n = torch.sigmoid(torch.matmul(x, self.Ut) + torch.matmul(h_t, self.Wtt) + torch.matmul(h_s, self.Wst) + self.bt)
