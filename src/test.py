@@ -6,7 +6,7 @@ import torch
 import config
 import utils
 from torch import autograd
-from STLN import STLN, STLSTM
+from STLN import ST_HMR, ST_LSTM
 import choose_dataset
 from torch.utils.data import DataLoader
 
@@ -20,7 +20,7 @@ if __name__ == '__main__':
         print(data['encoder_inputs'].shape)
         break
 
-    net = STLN(config, True, 23)
+    net = ST_HMR(config, True, 23)
     #with autograd.detect_anomaly():
     h, c_h = net(data['encoder_inputs'].float(), data['decoder_inputs'].float())
     loss = torch.mean(h)
