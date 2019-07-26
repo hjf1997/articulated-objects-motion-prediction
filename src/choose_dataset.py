@@ -17,8 +17,8 @@ class DatasetChooser(object):
         if self.config.datatype == 'lie':
             if self.dataset == 'Human':
                 bone_length_path = './data/Human/Test/y_test_lie/directions' \
-                                   '_0_lie.mat'
-                data = loader.HumanDataset(self.config, train=train)
+                                    '_0_lie.mat'
+                data = loader.H36mDataset(self.config, train=train)
                 self.config.input_size = data[1]['encoder_inputs'].shape[1]
             elif self.dataset == 'Fish':
                 bone_length_path = './data/Fish/Test/y_test_lie/test_0_lie.mat'
