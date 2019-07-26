@@ -18,11 +18,11 @@ class ST_HMR(nn.Module):
         for i in range(config.encoder_recurrent_steps):
             self.encoder_cell.append(EncoderCell(config))
         self.st_lstm = ST_LSTM(config, train, nbones)
-        self.weights_in = torch.nn.Parameter(torch.randn(config.input_size,
-                                      int(config.input_size/config.bone_dim*config.hidden_size)))
-        self.bias_in = torch.nn.Parameter(torch.randn(int(config.input_size/config.bone_dim*config.hidden_size)))
-        self.weights_out = torch.nn.Parameter(torch.randn(int(config.input_size/config.bone_dim*config.hidden_size), config.input_size))
-        self.bias_out = torch.nn.Parameter(torch.randn(config.input_size))
+        self.weights_in = torch.nn.Parameter(torch.empty(config.input_size,
+                                      int(config.input_size/config.bone_dim*config.hidden_size)).uniform_(-0.04, 0.04))
+        self.bias_in = torch.nn.Parameter(torch.empty(int(config.input_size/config.bone_dim*config.hidden_size)).uniform_(-0.04, 0.04))
+        self.weights_out = torch.nn.Parameter(torch.empty(int(config.input_size/config.bone_dim*config.hidden_size), config.input_size).uniform_(-0.04, 0.04))
+        self.bias_out = torch.nn.Parameter(torch.empty(config.input_size).uniform_(-0.04, 0.04))
 
     def forward(self, encoder_inputs, decoder_inputs):
 
@@ -286,9 +286,9 @@ class ST_LSTM(nn.Module):
         :param p: [batch, input_window_size-1, nbones, hidden_size]
         :return:
         """
-        h = torch.zeros(self.config.batch_size, self.seq_length_out + 1, self.nbones + 1, self.config.hidden_size)
+        h = torch.zeros(self.config.batch_size, self.seq_length_out + 1, self.nbones + 1, self.config.hidden_size, device=p.device)
         h[:, 1:, 1:, :] = p
-        c_h = torch.zeros(self.config.batch_size, self.seq_length_out + 1, self.nbones + 1, self.config.hidden_size)
+        c_h = torch.zeros_like(h)
         for i in range(self.config.decoder_recurrent_steps):
             #print("Train decoder at rec {}".format(str(i+1)))
             if i == 0:

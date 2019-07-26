@@ -29,19 +29,19 @@ def train(config):
     print('Device {} will be used'.format(device))
     torch.cuda.manual_seed(971103)
     net = ST_HMR(config, True, bone_length.shape[0]-1)
-    #net.to(device)
+    net.to(device)
 
     if torch.cuda.device_count() > 1:
         print("Let's use {} GPUs!".format(str(torch.cuda.device_count())))
         net = torch.nn.DataParallel(net)
 
-    optimizer = optim.Adam(net.parameters())
+    optimizer = optim.Adam(net.parameters(), lr=0.0001)
     for epoch in range(config.max_epoch):
         running_loss = 0.0
         for i, data in enumerate(train_loader, 0):
-            encoder_inputs = data['encoder_inputs'].float()#.to(device)
-            decoder_inputs = data['decoder_inputs'].float()#.to(device)
-            decoder_outputs = data['decoder_outputs'].float()#.to(device)
+            encoder_inputs = data['encoder_inputs'].float().to(device)
+            decoder_inputs = data['decoder_inputs'].float().to(device)
+            decoder_outputs = data['decoder_outputs'].float().to(device)
             prediction = net(encoder_inputs, decoder_inputs)
             loss = linearizedlie_loss(prediction, decoder_outputs, bone_length)
             running_loss += loss
