@@ -14,9 +14,10 @@ class ST_HMR(nn.Module):
     def __init__(self, config, train, nbones):
         super().__init__()
         self.config = config
+        self.train = train
         self.encoder_cell = torch.nn.ModuleList()
         for i in range(config.encoder_recurrent_steps):
-            self.encoder_cell.append(EncoderCell(config))
+            self.encoder_cell.append(EncoderCell(config, train))
         self.st_lstm = ST_LSTM(config, train, nbones)
         self.weights_in = torch.nn.Parameter(torch.empty(config.input_size,
                                       int(config.input_size/config.bone_dim*config.hidden_size)).uniform_(-0.04, 0.04))
@@ -30,8 +31,11 @@ class ST_HMR(nn.Module):
         h = torch.matmul(encoder_inputs, self.weights_in) + self.bias_in
         # [batch, config.input_window_size-1, nbones, hidden_size]
         h = h.view([h.shape[0], h.shape[1], int(h.shape[2]/self.config.hidden_size), self.config.hidden_size])
+        h = torch.dropout(h, self.config.keep_prob, self.train)
         c_h = torch.empty_like(h)
         c_h.copy_(h)
+        c_h = torch.dropout(c_h, self.config.keep_prob, self.train)
+
         p = torch.empty_like(h)
         p.copy_(h)
 
@@ -58,9 +62,10 @@ class ST_HMR(nn.Module):
 
 class EncoderCell(nn.Module):
 
-    def __init__(self, config):
+    def __init__(self, config, train):
         super().__init__()
         self.config = config
+        self.train = train
 
         """h update gates"""
         # input forget gate
@@ -231,6 +236,8 @@ class EncoderCell(nn.Module):
                             + (f_gt_n * c_g_t) + (f_gs_n * c_g_s) + (c_n * i_n)
         h = o_n * torch.tanh(c_h)
 
+        c_h = torch.dropout(c_h, self.config.keep_prob, self.train)
+        h = torch.dropout(h, self.config.keep_prob, self.train)
         """Update g_t"""
         g_t_hat = torch.mean(h, 1, keepdim=True).expand_as(h)
         f_gtf_n = torch.sigmoid(torch.matmul(g_t, self.Wgtf) + torch.matmul(g_t_hat, self.Zgtf) + self.bgtf)
@@ -286,7 +293,7 @@ class ST_LSTM(nn.Module):
         :param p: [batch, input_window_size-1, nbones, hidden_size]
         :return:
         """
-        h = torch.zeros(self.config.batch_size, self.seq_length_out + 1, self.nbones + 1, self.config.hidden_size, device=p.device)
+        h = torch.zeros(hidden_states.shape[0], self.seq_length_out + 1, self.nbones + 1, self.config.hidden_size, device=p.device)
         h[:, 1:, 1:, :] = p
         c_h = torch.zeros_like(h)
         for i in range(self.config.decoder_recurrent_steps):
