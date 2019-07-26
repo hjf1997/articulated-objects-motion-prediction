@@ -35,7 +35,7 @@ def train(config):
         print("Let's use {} GPUs!".format(str(torch.cuda.device_count())))
         net = torch.nn.DataParallel(net)
 
-    optimizer = optim.Adam(net.parameters(), lr=0.0001)
+    optimizer = optim.Adam(net.parameters(), lr=0.00001)
     for epoch in range(config.max_epoch):
         running_loss = 0.0
         for i, data in enumerate(train_loader, 0):
