@@ -17,7 +17,7 @@ class ST_HMR(nn.Module):
         self.train = train
         self.encoder_cell = torch.nn.ModuleList()
         for i in range(config.encoder_recurrent_steps):
-            self.encoder_cell.append(EncoderCell(config, train))
+            self.encoder_cell.append(EncoderCell(config))
         self.st_lstm = ST_LSTM(config, train, nbones)
         self.weights_in = torch.nn.Parameter(torch.empty(config.input_size,
                                       int(config.input_size/config.bone_dim*config.hidden_size)).uniform_(-0.04, 0.04))
@@ -25,16 +25,16 @@ class ST_HMR(nn.Module):
         self.weights_out = torch.nn.Parameter(torch.empty(int(config.input_size/config.bone_dim*config.hidden_size), config.input_size).uniform_(-0.04, 0.04))
         self.bias_out = torch.nn.Parameter(torch.empty(config.input_size).uniform_(-0.04, 0.04))
 
-    def forward(self, encoder_inputs, decoder_inputs):
+    def forward(self, encoder_inputs, decoder_inputs, train):
 
         # [batch, config.input_window_size-1, input_size/bone_dim*hidden_size]
         h = torch.matmul(encoder_inputs, self.weights_in) + self.bias_in
         # [batch, config.input_window_size-1, nbones, hidden_size]
         h = h.view([h.shape[0], h.shape[1], int(h.shape[2]/self.config.hidden_size), self.config.hidden_size])
-        h = torch.dropout(h, self.config.keep_prob, self.train)
+        h = torch.dropout(h, self.config.keep_prob, train)
         c_h = torch.empty_like(h)
         c_h.copy_(h)
-        c_h = torch.dropout(c_h, self.config.keep_prob, self.train)
+        c_h = torch.dropout(c_h, self.config.keep_prob, train)
 
         p = torch.empty_like(h)
         p.copy_(h)
@@ -50,7 +50,7 @@ class ST_HMR(nn.Module):
 
         for rec in range(self.config.encoder_recurrent_steps):
             #print("train encoder at rec {}".format(str(rec+1)))
-            hidden_states, cell_states, global_t_state, global_s_state, g_t, c_g_t, g_s, c_g_s = self.encoder_cell[rec](h, c_h, p, g_t, c_g_t, g_s, c_g_s)
+            hidden_states, cell_states, global_t_state, global_s_state, g_t, c_g_t, g_s, c_g_s = self.encoder_cell[rec](h, c_h, p, g_t, c_g_t, g_s, c_g_s, train)
 
         decoder_p = torch.matmul(decoder_inputs, self.weights_in) + self.bias_in
         decoder_p = decoder_p.view([decoder_p.shape[0], decoder_p.shape[1], int(decoder_p.shape[2]/self.config.hidden_size), self.config.hidden_size])
@@ -62,10 +62,9 @@ class ST_HMR(nn.Module):
 
 class EncoderCell(nn.Module):
 
-    def __init__(self, config, train):
+    def __init__(self, config):
         super().__init__()
         self.config = config
-        self.train = train
 
         """h update gates"""
         # input forget gate
@@ -172,7 +171,7 @@ class EncoderCell(nn.Module):
         self.Zgso = torch.nn.Parameter(torch.randn(self.config.input_window_size-1, self.config.hidden_size, self.config.hidden_size))
         self.bgso = torch.nn.Parameter(torch.randn(self.config.input_window_size-1, 1, self.config.hidden_size))
 
-    def forward(self, h, c_h, p, g_t, c_g_t, g_s, c_g_s):
+    def forward(self, h, c_h, p, g_t, c_g_t, g_s, c_g_s, train):
         """
 
         :param h: hidden states of [batch, input_window_size-1, nbones, hidden_size]
@@ -236,8 +235,8 @@ class EncoderCell(nn.Module):
                             + (f_gt_n * c_g_t) + (f_gs_n * c_g_s) + (c_n * i_n)
         h = o_n * torch.tanh(c_h)
 
-        c_h = torch.dropout(c_h, self.config.keep_prob, self.train)
-        h = torch.dropout(h, self.config.keep_prob, self.train)
+        c_h = torch.dropout(c_h, self.config.keep_prob, train)
+        h = torch.dropout(h, self.config.keep_prob, train)
         """Update g_t"""
         g_t_hat = torch.mean(h, 1, keepdim=True).expand_as(h)
         f_gtf_n = torch.sigmoid(torch.matmul(g_t, self.Wgtf) + torch.matmul(g_t_hat, self.Zgtf) + self.bgtf)

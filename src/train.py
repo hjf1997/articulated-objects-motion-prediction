@@ -60,7 +60,7 @@ def train(config):
                 #     encoder_inputs = torch.cat([data['encoder_inputs'].float().to(device), encoder_inputs], dim=0)
                 #     decoder_inputs = torch.cat([data['decoder_inputs'].float().to(device), decoder_inputs], dim=0)
                 #     decoder_outputs = torch.cat([data['decoder_outputs'].float().to(device), decoder_outputs], dim=0)
-                prediction = net(encoder_inputs, decoder_inputs)
+                prediction = net(encoder_inputs, decoder_inputs, True)
                 loss = linearizedlie_loss(prediction, decoder_outputs, bone_length)
                 run_loss += loss
                 net.zero_grad()
@@ -81,7 +81,7 @@ def train(config):
                     #     encoder_inputs = torch.cat([data['encoder_inputs'].float().to(device), encoder_inputs], dim=0)
                     #     decoder_inputs = torch.cat([data['decoder_inputs'].float().to(device), decoder_inputs], dim=0)
                     #     decoder_outputs = torch.cat([data['decoder_outputs'].float().to(device), decoder_outputs], dim=0)
-                    prediction = net(encoder_inputs, decoder_inputs)
+                    prediction = net(encoder_inputs, decoder_inputs, False)
                     loss = linearizedlie_loss(prediction, decoder_outputs, bone_length)
                     run_loss += loss
                 test_loss += run_loss/(i+1)
