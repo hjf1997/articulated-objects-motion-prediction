@@ -14,10 +14,10 @@ class ST_HMR(nn.Module):
     def __init__(self, config, train, nbones):
         super().__init__()
         self.config = config
-        self.train = train
-        self.encoder_cell = torch.nn.ModuleList()
-        for i in range(config.encoder_recurrent_steps):
-            self.encoder_cell.append(EncoderCell(config))
+        # self.encoder_cell = torch.nn.ModuleList()
+        # for i in range(config.encoder_recurrent_steps):
+        #     self.encoder_cell.append(EncoderCell(config))
+        self.encoder_cell = EncoderCell(config)
         self.st_lstm = ST_LSTM(config, train, nbones)
         self.weights_in = torch.nn.Parameter(torch.empty(config.input_size,
                                       int(config.input_size/config.bone_dim*config.hidden_size)).uniform_(-0.04, 0.04))
@@ -50,7 +50,7 @@ class ST_HMR(nn.Module):
 
         for rec in range(self.config.encoder_recurrent_steps):
             #print("train encoder at rec {}".format(str(rec+1)))
-            hidden_states, cell_states, global_t_state, global_s_state, g_t, c_g_t, g_s, c_g_s = self.encoder_cell[rec](h, c_h, p, g_t, c_g_t, g_s, c_g_s, train)
+            hidden_states, cell_states, global_t_state, global_s_state, g_t, c_g_t, g_s, c_g_s = self.encoder_cell(h, c_h, p, g_t, c_g_t, g_s, c_g_s, train)
 
         decoder_p = torch.matmul(decoder_inputs, self.weights_in) + self.bias_in
         decoder_p = decoder_p.view([decoder_p.shape[0], decoder_p.shape[1], int(decoder_p.shape[2]/self.config.hidden_size), self.config.hidden_size])
