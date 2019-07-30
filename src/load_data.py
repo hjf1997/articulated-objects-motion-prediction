@@ -6,6 +6,18 @@ import scipy.io as sio
 import copy
 
 
+class FormatDataPre(object):
+
+    def __init__(self):
+        pass
+
+    def __call__(self, x_text, y_text):
+
+        dec_in_test = x_text[-1:, :]
+        x_text = x_text[:-1, :]
+        return {'x_text': x_text, 'dec_in_test': dec_in_test, 'y_text': y_text}
+
+
 class FormatData(object):
 
     def __init__(self, config):
@@ -22,7 +34,7 @@ class FormatData(object):
         encoder_inputs = data_seq[:self.config.input_window_size-1, :]
         # 最后一个弃掉了,这里代码还可以精简
         decoder_inputs = data_seq[self.config.input_window_size-1:
-                                  self.config.input_window_size-1+self.config.output_window_size, :]
+                                  self.config.input_window_size, :]
         decoder_outputs = data_seq[self.config.input_window_size:, :]
         return {'encoder_inputs': encoder_inputs, 'decoder_inputs': decoder_inputs, 'decoder_outputs': decoder_outputs}
 
@@ -302,5 +314,85 @@ class CSLDataset(Dataset):
 
     def __len__(self) :
         pass
+
+
+class FishPredictionDataset(Dataset):
+
+    def __init__(self, config):
+        self.config = config
+        self.lie_tsfm = LieTsfm(config)
+        self.formatdata = FormatDataPre()
+        if config.datatype == 'lie':
+            x = []
+            y = []
+            for i in range(8):
+                x_filename = './data/Fish/Test/x_test_lie/test_' + str(i) + '_lie.mat'
+                y_filename = './data/Fish/Test/y_test_lie/test_' + str(i) + '_lie.mat'
+
+                x_rawdata = sio.loadmat(x_filename)
+                x_rawdata = x_rawdata[list(x_rawdata.keys())[3]]
+
+                y_rawdata = sio.loadmat(y_filename)
+                y_rawdata = y_rawdata[list(y_rawdata.keys())[3]]
+
+                x.append(x_rawdata)
+                y.append(y_rawdata)
+            self.x = x
+            self.y = y
+        else:
+            pass
+
+    def __len__(self):
+
+        return len(self.x)
+
+    def __getitem__(self, idx):
+
+        if self.config.datatype == 'lie':
+            x_sample = self.lie_tsfm(self.x[idx])
+            y_sample = self.lie_tsfm(self.y[idx])
+        elif self.config.datatype == 'xyz':
+            pass
+        sample = self.formatdata(x_sample, y_sample)
+        return sample
+
+
+class MousePredictionDataset(Dataset):
+
+    def __init__(self, config):
+
+        if config.datatype == 'lie':
+            x = []
+            y = []
+            for i in range(8):
+                x_filename = './data/Mouse/Test/x_test_lie/test_' + str(i) + '_lie.mat'
+                y_filename = './data/Mouse/Test/y_test_lie/test_' + str(i) + '_lie.mat'
+
+                x_rawdata = sio.loadmat(x_filename)
+                x_rawdata = x_rawdata[list(x_rawdata.keys())[3]]
+
+                y_rawdata = sio.loadmat(y_filename)
+                y_rawdata = y_rawdata[list(y_rawdata.keys())[3]]
+
+                x.append(x_rawdata)
+                y.append(y_rawdata)
+            self.x = x
+            self.y = y
+        else:
+            pass
+
+    def __len__(self):
+
+        return len(self.x)
+
+    def __getitem__(self, idx):
+
+        if self.config.datatype == 'lie':
+            x_sample = self.lie_tsfm(self.x[idx])
+            y_sample = self.lie_tsfm(self.y[idx])
+        elif self.config.datatype == 'xyz':
+            pass
+        return {'x': x_sample, 'y': y_sample}
+
 
 

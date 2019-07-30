@@ -3,7 +3,78 @@
 import sys
 import time
 import numpy as np
+import copy
 
+
+def expmap2rotmat(A):
+    theta = np.linalg.norm(A)
+    if theta == 0:
+        R = np.identity(3)
+    else:
+        A = A / theta
+        cross_matrix = np.array([[0, -A[2], A[1]], [A[2], 0, -A[0]], [-A[1], A[0], 0]])
+        R = np.identity(3) + np.sin(theta) * cross_matrix + (1 - np.cos(theta)) * np.matmul(cross_matrix, cross_matrix)
+
+    return R
+
+def rotmat2euler(R):
+    if R[0, 2] == 1 or R[0, 2] == -1:
+        E3 = 0
+        dlta = np.arctan2(R[0, 1], R[0, 2])
+        if R[0, 2] == -1:
+            E2 = np.pi/2
+            E1 = E3 + dlta
+        else:
+            E2 = -np.pi/2
+            E1 = -E3 + dlta
+    else:
+        E2 = -np.arcsin(R[0, 2])
+        E1 = np.arctan2(R[1, 2]/np.cos(E2), R[2, 2]/np.cos(E2))
+        E3 = np.arctan2(R[0, 1]/np.cos(E2), R[0, 0]/np.cos(E2))
+
+    eul = np.array([E1, E2, E3])
+
+    return eul
+
+
+def mean_euler_error(config, action, y_predict, y_test):
+    # Convert from exponential map to Euler angles
+    n_batch = y_predict.shape[0]
+    nframes = y_predict.shape[1]
+
+    mean_errors = np.zeros([n_batch, nframes])
+    for i in range(n_batch):
+        for j in range(nframes):
+            if config.dataset == 'Human':
+                pass
+                #pred = unNormalizeData(y_predict[i], config.data_mean, config.data_std, config.dim_to_ignore)
+                #gt = unNormalizeData(y_test[i], config.data_mean, config.data_std, config.dim_to_ignore)
+            else:
+                pred = copy.deepcopy(y_predict[i])
+                gt = copy.deepcopy(y_test[i])
+            for k in np.arange(3, pred.shape[1]-2, 3):
+                pred[j, k:k + 3] = rotmat2euler(expmap2rotmat(pred[j, k:k + 3]))
+                gt[j, k:k + 3] = rotmat2euler(expmap2rotmat(gt[j, k:k + 3]))
+        pred[:, 0:6] = 0
+        gt[:, 0:6] = 0
+
+        idx_to_use = np.where(np.std(gt, 0) > 1e-4)[0]
+
+        euc_error = np.power(gt[:, idx_to_use] - pred[:, idx_to_use], 2)
+        euc_error = np.sum(euc_error, 1)
+        euc_error = np.sqrt(euc_error)
+        mean_errors[i, :] = euc_error
+
+    mme = np.mean(mean_errors, 0)
+
+    print("\n" + action)
+    toprint_idx = np.array([1, 3, 7, 9, 13, 15, 17, 24])
+    idx = np.where(toprint_idx < len(mme))[0]
+    toprint_list = ["& {:.2f} ".format(mme[toprint_idx[i]]) for i in idx]
+    print("".join(toprint_list))
+
+    mme_mean = np.mean(mme[toprint_idx[idx]])
+    return mme, mme_mean
 
 class Progbar(object):
     """Progbar class copied from https://github.com/fchollet/keras/

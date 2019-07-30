@@ -12,31 +12,56 @@ class DatasetChooser(object):
         self.config = config
         self.dataset = config.dataset
 
-    def choose_dataset(self, train=True):
+    def choose_dataset(self, train=True, prediction=False):
 
-        if self.config.datatype == 'lie':
-            if self.dataset == 'Human':
-                bone_length_path = './data/Human/Test/y_test_lie/directions' \
-                                    '_0_lie.mat'
-                data = loader.H36mDataset(self.config, train=train)
-                self.config.input_size = data[1]['encoder_inputs'].shape[1]
-            elif self.dataset == 'Fish':
-                bone_length_path = './data/Fish/Test/y_test_lie/test_0_lie.mat'
-                data = loader.FishDataset(self.config, train=train)
-                self.config.input_size = data[0]['encoder_inputs'].shape[1]
-            elif self.dataset == 'Mouse':
-                pass
-            elif self.dataset == 'CSL':
-                pass
-        elif self.config.datatype == 'xyz':
-            if self.dataset == 'Human':
-                pass
-            elif self.dataset == 'Fish':
-                pass
-            elif self.dataset == 'Mouse':
-                pass
-            elif self.dataset == 'CSL':
-                pass
+        if not prediction:
+            if self.config.datatype == 'lie':
+                if self.dataset == 'Human':
+                    bone_length_path = './data/Human/Test/y_test_lie/directions' \
+                                        '_0_lie.mat'
+                    data = loader.H36mDataset(self.config, train=train)
+                    self.config.input_size = data[0]['encoder_inputs'].shape[1]
+                elif self.dataset == 'Fish':
+                    bone_length_path = './data/Fish/Test/y_test_lie/test_0_lie.mat'
+                    data = loader.FishDataset(self.config, train=train)
+                    self.config.input_size = data[0]['encoder_inputs'].shape[1]
+                elif self.dataset == 'Mouse':
+                    pass
+                elif self.dataset == 'CSL':
+                    pass
+            elif self.config.datatype == 'xyz':
+                if self.dataset == 'Human':
+                    pass
+                elif self.dataset == 'Fish':
+                    pass
+                elif self.dataset == 'Mouse':
+                    pass
+                elif self.dataset == 'CSL':
+                    pass
+        else:
+            if self.config.datatype == 'lie':
+                if self.dataset == 'Human':
+                    bone_length_path = './data/Human/Test/y_test_lie/directions' \
+                                        '_0_lie.mat'
+                    data = loader.FishPredictionDataset(self.config)
+                    self.config.input_size = data[0]['x'].shape[1]
+                elif self.dataset == 'Fish':
+                    bone_length_path = './data/Fish/Test/y_test_lie/test_0_lie.mat'
+                    data = loader.FishPredictionDataset(self.config)
+                    self.config.input_size = data[0]['x_text'].shape[1]
+                elif self.dataset == 'Mouse':
+                    pass
+                elif self.dataset == 'CSL':
+                    pass
+            elif self.config.datatype == 'xyz':
+                if self.dataset == 'Human':
+                    pass
+                elif self.dataset == 'Fish':
+                    pass
+                elif self.dataset == 'Mouse':
+                    pass
+                elif self.dataset == 'CSL':
+                    pass
 
         rawdata = sio.loadmat(bone_length_path)
         rawdata = rawdata[list(rawdata.keys())[3]]
@@ -45,8 +70,8 @@ class DatasetChooser(object):
 
         return data, bone
 
-    def __call__(self, train=True):
-        return self.choose_dataset(train)
+    def __call__(self, train=True, prediction=False):
+        return self.choose_dataset(train, prediction)
 
     def cal_bone_length(self, rawdata):
 
