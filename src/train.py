@@ -34,7 +34,16 @@ def train(config):
     net.to(device)
     print('Total param number:' + str(sum(p.numel() for p in net.parameters())))
     print('Encoder param number:' + str(sum(p.numel() for p in net.encoder_cell.parameters())))
-    print('Decoder param number:' + str(sum(p.numel() for p in net.st_lstm.parameters())))
+    print('Decoder param number:' + str(sum(p.numel() for p in net.decoder.parameters())))
+
+    net = torch.nn.DataParallel(net)
+    save_model = torch.load(r'./model/_Epoch_242 Loss_0.0066.pth')
+    model_dict = net.state_dict()
+    state_dict = {k: v for k, v in save_model.items() if k in model_dict.keys()}
+    state_dict.pop('module.weights_out')
+    state_dict.pop('module.weights_in')
+    model_dict.update(state_dict)
+    net.load_state_dict(model_dict)
 
     if torch.cuda.device_count() > 1:
         print("Let's use {} GPUs!".format(str(torch.cuda.device_count())))
@@ -117,7 +126,7 @@ def prediction(config, checkpoint_filename):
     net.to(device)
     print('Total param number:' + str(sum(p.numel() for p in net.parameters())))
     print('Encoder param number:' + str(sum(p.numel() for p in net.encoder_cell.parameters())))
-    print('Decoder param number:' + str(sum(p.numel() for p in net.st_lstm.parameters())))
+    print('Decoder param number:' + str(sum(p.numel() for p in net.decoder.parameters())))
 
     #if torch.cuda.device_count() > 1:
      #   print("Let's use {} GPUs!".format(str(torch.cuda.device_count())))
@@ -139,5 +148,5 @@ def prediction(config, checkpoint_filename):
 if __name__ == '__main__':
 
     config = config.TrainConfig('Fish', 'lie', 'all')
-    prediction(config, './model/_Epoch_242 Loss_0.0066.pth')
-    #train(config)
+    #prediction(config, './model/_Epoch_242 Loss_0.0066.pth')
+    train(config)
