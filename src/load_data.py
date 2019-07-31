@@ -23,7 +23,7 @@ class FormatData(object):
     def __init__(self, config):
         self.config = config
 
-    def __call__(self, sample):
+    def __call__(self, sample, train):
 
         total_frames = self.config.input_window_size + self.config.output_window_size
 
@@ -33,8 +33,11 @@ class FormatData(object):
         data_seq = sample[idx:idx+total_frames, :]
         encoder_inputs = data_seq[:self.config.input_window_size-1, :]
         # 最后一个弃掉了,这里代码还可以精简
-        decoder_inputs = data_seq[self.config.input_window_size-1:
-                                  self.config.input_window_size, :]
+        if train:
+            decoder_inputs = data_seq[self.config.input_window_size-1:
+                                      self.config.input_window_size-1+self.config.output_window_size, :]
+        else:
+            decoder_inputs = data_seq[self.config.input_window_size - 1:self.config.input_window_size, :]
         decoder_outputs = data_seq[self.config.input_window_size:, :]
         return {'encoder_inputs': encoder_inputs, 'decoder_inputs': decoder_inputs, 'decoder_outputs': decoder_outputs}
 
@@ -256,7 +259,7 @@ class FishDataset(Dataset):
             sample = self.lie_tsfm(self.data[idx])
         elif self.config.datatype == 'xyz':
             pass
-        sample = self.formatdata(sample)
+        sample = self.formatdata(sample, self.train)
         return sample
 
     def __len__(self):
@@ -296,7 +299,7 @@ class MouseDataset(Dataset):
             sample = self.lie_tsfm(self.data[idx])
         elif self.config.datatype == 'xyz':
             pass
-        sample = self.formatdata(sample)
+        sample = self.formatdata(sample, self.train)
         return sample
 
     def __len__(self):

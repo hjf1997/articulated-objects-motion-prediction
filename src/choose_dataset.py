@@ -26,7 +26,9 @@ class DatasetChooser(object):
                     data = loader.FishDataset(self.config, train=train)
                     self.config.input_size = data[0]['encoder_inputs'].shape[1]
                 elif self.dataset == 'Mouse':
-                    pass
+                    bone_length_path = './data/Mouse/Test/y_test_lie/test_0_lie.mat'
+                    data = loader.MouseDataset(self.config, train=train)
+                    self.config.input_size = data[0]['encoder_inputs'].shape[1]
                 elif self.dataset == 'CSL':
                     pass
             elif self.config.datatype == 'xyz':

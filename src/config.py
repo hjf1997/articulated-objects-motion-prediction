@@ -13,20 +13,20 @@ class TrainConfig(object):
     input_window_size = 50                      # Input window size during training
     output_window_size = 10                     # Output window size during training
     test_output_window = 10                    # Output window size during testing. test_output_window is overwritten by test set size when longterm is true
-    hidden_size = 32                        # Number of hidden units for HMR
+    hidden_size = 16                        # Number of hidden units for HMR
     #decoder_hidden_size = 52            # Number of hidden units for decoders
     batch_size = 8                              # Batch size for training
     learning_rate = 0.001                       # Learning rate
     max_epoch = 500                              # Maximum training epochs
-    training_size = 1000                       # Training iterations per epoch
+    training_size = 20                       # Training iterations per epoch
     validation_size = 100                       # Validation iterations per epoch
-    share_encoder_weights = True      # share encoder weight at each recurrent step
+    share_encoder_weights = False      # share encoder weight at each recurrent step
     restore = False                             # Restore the trained weights or restart training from scratch
     longterm = False                            # Whether we are doing super longterm prediction
     early_stop = 10                             # Stop training if validation loss do not improve after these epochs
     keep_prob = 0.8                               # Keep probability for RNN cell weights
     context_window = 1                          # Context window size in HMR
-    encoder_recurrent_steps = 10                       # Number of recurrent steps in HMR
+    encoder_recurrent_steps = 3                       # Number of recurrent steps in HMR
     decoder_recurrent_steps = 2            # Number of recurrent steps in LS-STLM decoder
     bone_dim = 3                                  # dimension of one bone representation
 

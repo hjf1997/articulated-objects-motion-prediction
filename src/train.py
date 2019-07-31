@@ -24,13 +24,13 @@ def train(config):
     choose = DatasetChooser(config)
     train_dataset, bone_length = choose(train=True)
     train_loader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True)
-    test_dataset, _ = choose(train=False)
+    test_dataset, _ = choose(train=True)
     test_loader = DataLoader(test_dataset, batch_size=config.batch_size, shuffle=True)
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print('Device {} will be used'.format(device))
     torch.cuda.manual_seed(971103)
-    net = ST_HMR(config, False, bone_length.shape[0]-1)
+    net = ST_HMR(config, bone_length.shape[0]-1)
     net.to(device)
     print('Total param number:' + str(sum(p.numel() for p in net.parameters())))
     print('Encoder param number:' + str(sum(p.numel() for p in net.encoder_cell.parameters())))
@@ -40,7 +40,7 @@ def train(config):
         print("Let's use {} GPUs!".format(str(torch.cuda.device_count())))
         net = torch.nn.DataParallel(net)
 
-    optimizer = optim.Adam(net.parameters(), lr=0.001)
+    optimizer = optim.Adam(net.parameters(), lr=config.learning_rate)
 
     # Save model
     checkpoint_dir = './model/'
@@ -55,6 +55,7 @@ def train(config):
         prog_valid = Progbar(target=config.validation_size)
 
         # Train
+        #with torch.autograd.set_detect_anomaly(True):
         for it in range(config.training_size):
             run_loss = 0.0
             for i, data in enumerate(train_loader, 0):
@@ -65,7 +66,9 @@ def train(config):
                 #     encoder_inputs = torch.cat([data['encoder_inputs'].float().to(device), encoder_inputs], dim=0)
                 #     decoder_inputs = torch.cat([data['decoder_inputs'].float().to(device), decoder_inputs], dim=0)
                 #     decoder_outputs = torch.cat([data['decoder_outputs'].float().to(device), decoder_outputs], dim=0)
-                prediction = net(encoder_inputs, decoder_inputs, True)
+                prediction = net(encoder_inputs, decoder_inputs, train=True)
+                #print('___')
+                #print(torch.sum(prediction))
                 loss = linearizedlie_loss(prediction, decoder_outputs, bone_length)
                 run_loss += loss.item()
                 net.zero_grad()
@@ -75,23 +78,20 @@ def train(config):
             prog.update(it + 1, [("Training Loss", run_loss/(i+1))])
 
         # Test
-        test_loss = 0.0
-        for it in range(config.validation_size):
-                run_loss = 0.0
-                for i, data in enumerate(test_loader, 0):
-                    encoder_inputs = data['encoder_inputs'].float().to(device)
-                    decoder_inputs = data['decoder_inputs'].float().to(device)
-                    decoder_outputs = data['decoder_outputs'].float().to(device)
-                    # else:
-                    #     encoder_inputs = torch.cat([data['encoder_inputs'].float().to(device), encoder_inputs], dim=0)
-                    #     decoder_inputs = torch.cat([data['decoder_inputs'].float().to(device), decoder_inputs], dim=0)
-                    #     decoder_outputs = torch.cat([data['decoder_outputs'].float().to(device), decoder_outputs], dim=0)
-                    prediction = net(encoder_inputs, decoder_inputs, train=False)
-                    loss = linearizedlie_loss(prediction, decoder_outputs, bone_length)
-                    run_loss += loss.item()
-                test_loss += run_loss/(i+1)
-                prog_valid.update(it+1, [("Training Loss", run_loss/(i+1))])
-        test_loss /= config.validation_size
+        with torch.no_grad():
+            test_loss = 0.0
+            for it in range(config.validation_size):
+                    run_loss = 0.0
+                    for i, data in enumerate(test_loader, 0):
+                        encoder_inputs = data['encoder_inputs'].float().to(device)
+                        decoder_inputs = data['decoder_inputs'].float().to(device)
+                        decoder_outputs = data['decoder_outputs'].float().to(device)
+                        prediction = net(encoder_inputs, decoder_inputs, train=False)
+                        loss = linearizedlie_loss(prediction, decoder_outputs, bone_length)
+                        run_loss += loss.item()
+                    test_loss += run_loss/(i+1)
+                    prog_valid.update(it+1, [("Training Loss", run_loss/(i+1))])
+            test_loss /= config.validation_size
 
         if test_loss < best_val_loss:
             medel_name = checkpoint_dir + "Epoch_" + str(epoch+1) + " Loss_" + str(round(test_loss, 2))
@@ -104,6 +104,7 @@ def prediction(config, checkpoint_filename):
     # Start testing model!
 
     # generate data loader
+    config.output_window_size = 100
     choose = DatasetChooser(config)
     if config.datatype is not 'Human':
         prediction_dataset, bone_length = choose(prediction=True)
@@ -112,7 +113,7 @@ def prediction(config, checkpoint_filename):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print('Device {} will be used'.format(device))
     torch.cuda.manual_seed(971103)
-    net = ST_HMR(config, prediction=True, nbones=bone_length.shape[0]-1)
+    net = ST_HMR(config, nbones=bone_length.shape[0]-1)
     net.to(device)
     print('Total param number:' + str(sum(p.numel() for p in net.parameters())))
     print('Encoder param number:' + str(sum(p.numel() for p in net.encoder_cell.parameters())))
@@ -126,12 +127,17 @@ def prediction(config, checkpoint_filename):
         for i, data in enumerate(prediction_loader, 0):
             x_text = data['x_text'].float().to(device)
             dec_in_test = data['dec_in_test'].float().to(device)
-            y_text = data['y_text'].float().to(device).cpu().numpy()
-            pred = net(x_text, dec_in_test, train=False).cpu().numpy()
-            mean_error, _ = utils.mean_euler_error(config, 'default', pred, y_text[:, :10, :])
+            y_text = data['y_text'].float().to(device)#.cpu().numpy()
+            pred = net(x_text, dec_in_test, train=False)#.cpu().numpy()
+            loss = linearizedlie_loss(pred, y_text[:, :100, :], bone_length)
+            print(loss.item())
+            y_text = y_text.cpu().numpy()
+            pred = pred.cpu().numpy()
+            mean_error, _ = utils.mean_euler_error(config, 'default', pred, y_text[:, :100, :])
 
 
 if __name__ == '__main__':
 
     config = config.TrainConfig('Fish', 'lie', 'all')
-    train(config)
+    prediction(config, './model/_Epoch_242 Loss_0.0066.pth')
+    #train(config)

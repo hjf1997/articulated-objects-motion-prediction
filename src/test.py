@@ -15,9 +15,15 @@ from torch.utils.data import DataLoader
 if __name__ == '__main__':
 
     config = config.TrainConfig('Fish', 'lie', 'all')
+    # choose = DatasetChooser(config)
+    # prediction_dataset, _ = choose(prediction=True)
+    # prediction_loader = DataLoader(prediction_dataset, batch_size=config.batch_size, shuffle=True)
+
     choose = DatasetChooser(config)
-    prediction_dataset, _ = choose(prediction=True)
-    prediction_loader = DataLoader(prediction_dataset, batch_size=config.batch_size, shuffle=True)
+    train_dataset, bone_length = choose(train=True)
+    train_loader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True)
+    test_dataset, _ = choose(train=True)
+    test_loader = DataLoader(test_dataset, batch_size=config.batch_size, shuffle=True)
 
     # data = choose_dataset.DatasetChooser(config)
     # data, bone = data()
