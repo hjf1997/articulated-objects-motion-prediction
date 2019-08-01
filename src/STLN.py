@@ -25,26 +25,13 @@ class ST_HMR(nn.Module):
                 self.encoder_cell.append(shared_encoder)
 
         # init decoder
-        self.decoder = ST_LSTM(config, nbones)
+        self.st_lstm = ST_LSTM(config, nbones)
 
         self.weights_in = torch.nn.Parameter(torch.empty(config.input_size,
                                       int(config.input_size/config.bone_dim*config.hidden_size)).uniform_(-0.04, 0.04))
         self.bias_in = torch.nn.Parameter(torch.empty(int(config.input_size/config.bone_dim*config.hidden_size)).uniform_(-0.04, 0.04))
-
-        self.weights_decoder_in = torch.nn.Parameter(torch.empty(config.input_size, int(config.input_size/config.bone_dim*config.decoder_hidden_size)).uniform_(-0.04, 0.04))
-        self.bias_decoder_in = torch.nn.Parameter(torch.empty(int(config.input_size/config.bone_dim*config.decoder_hidden_size)).uniform_(-0.04, 0.04))
-
-        self.weights_out = torch.nn.Parameter(torch.empty(int(config.input_size/config.bone_dim*config.decoder_hidden_size), config.input_size).uniform_(-0.04, 0.04))
+        self.weights_out = torch.nn.Parameter(torch.empty(int(config.input_size/config.bone_dim*config.hidden_size), config.input_size).uniform_(-0.04, 0.04))
         self.bias_out = torch.nn.Parameter(torch.empty(config.input_size).uniform_(-0.04, 0.04))
-
-        self.hidden_states_trans_weights = torch.nn.Parameter(torch.empty(config.hidden_size, config.decoder_hidden_size).uniform_(-0.04, 0.04))
-        self.hidden_states_trans_bias = torch.nn.Parameter(torch.empty(config.decoder_hidden_size).uniform_(-0.04, 0.04))
-        self.cell_states_trans_weights = torch.nn.Parameter(torch.empty(config.hidden_size, config.decoder_hidden_size).uniform_(-0.04, 0.04))
-        self.cell_states_trans_bias = torch.nn.Parameter(torch.empty(config.decoder_hidden_size).uniform_(-0.04, 0.04))
-        self.global_t_state_trans_weights = torch.nn.Parameter(torch.empty(config.hidden_size, config.decoder_hidden_size).uniform_(-0.04, 0.04))
-        self.global_t_state_trans_bias = torch.nn.Parameter(torch.empty(config.decoder_hidden_size).uniform_(-0.04, 0.04))
-        self.global_s_state_trans_weights = torch.nn.Parameter(torch.empty(config.hidden_size, config.decoder_hidden_size).uniform_(-0.04, 0.04))
-        self.global_s_state_trans_bias = torch.nn.Parameter(torch.empty(config.decoder_hidden_size).uniform_(-0.04, 0.04))
 
     def forward(self, encoder_inputs, decoder_inputs, train):
 
@@ -73,14 +60,9 @@ class ST_HMR(nn.Module):
         for rec in range(self.config.encoder_recurrent_steps):
             hidden_states, cell_states, global_t_state, global_s_state, g_t, c_g_t, g_s, c_g_s = self.encoder_cell[rec](h, c_h, p, g_t, c_g_t, g_s, c_g_s, train)
 
-        hidden_states = torch.matmul(hidden_states, self.hidden_states_trans_weights) + self.hidden_states_trans_bias
-        cell_states = torch.matmul(cell_states, self.cell_states_trans_weights) + self.cell_states_trans_bias
-        global_t_state = torch.matmul(global_t_state, self.global_t_state_trans_weights) + self.global_t_state_trans_bias
-        global_s_state = torch.matmul(global_s_state, self.global_s_state_trans_weights) + self.global_s_state_trans_bias
-        decoder_p = torch.matmul(decoder_inputs, self.weights_decoder_in) + self.bias_decoder_in
-        decoder_p = decoder_p.view([decoder_p.shape[0], decoder_p.shape[1], int(decoder_p.shape[2]/self.config.decoder_hidden_size), self.config.decoder_hidden_size])
-
-        prediction, _ = self.decoder(hidden_states, cell_states, global_t_state, global_s_state, decoder_p)
+        decoder_p = torch.matmul(decoder_inputs, self.weights_in) + self.bias_in
+        decoder_p = decoder_p.view([decoder_p.shape[0], decoder_p.shape[1], int(decoder_p.shape[2]/self.config.hidden_size), self.config.hidden_size])
+        prediction, _ = self.st_lstm(hidden_states, cell_states, global_t_state, global_s_state, decoder_p)
         prediction = prediction.view([prediction.shape[0], prediction.shape[1], prediction.shape[2]*prediction.shape[3]])
         prediction = torch.matmul(prediction, self.weights_out) + self.bias_out
         return prediction
@@ -199,7 +181,6 @@ class EncoderCell(nn.Module):
 
     def forward(self, h, c_h, p, g_t, c_g_t, g_s, c_g_s, train):
         """
-
         :param h: hidden states of [batch, input_window_size-1, nbones, hidden_size]
         :param c_h: cell states of  [batch, input_window_size-1, nbones, hidden_size]
         :param p: pose of  [batch, input_window_size-1, nbones, hidden_size]
@@ -297,16 +278,18 @@ class ST_LSTM(nn.Module):
         for i in range(config.decoder_recurrent_steps):
             print("Prepare decoder for rec {}".format(str(i+1)))
             cells = torch.nn.ModuleList()
-            for bone in range(nbones):
-                cell = ST_LSTMCell(config)
-                cells.append(cell)
+            for frame in range(1): # self.seq_length_out
+                cells_frame = torch.nn.ModuleList()
+                for bone in range(nbones):
+                    cell = ST_LSTMCell(config)
+                    cells_frame.append(cell)
+                cells.append(cells_frame)
             recurrent_cell_box.append(cells)
         self.recurrent_cell_box = recurrent_cell_box
         print("Prepare decoder for finished")
 
     def forward(self, hidden_states, cell_states, global_t_state, global_s_state, p):
         """
-
         :param hidden_states:  [batch, input_window_size-1, nbones, hidden_size]
         :param cell_states: [batch, input_window_size-1, nbones, hidden_size]
         :param global_t_state: [batch,  nbones, hidden_size]
@@ -337,14 +320,14 @@ class ST_LSTM(nn.Module):
         #                 = cell(h[:, frame+1, bone+1, :].clone(), h[:, frame, bone+1, :].clone(),
         #                        h[:, frame+1, bone, :].clone(), c_h[:, frame, bone+1, :].clone(), c_h[:, frame+1, bone, :].clone())
 
-        h_1 = torch.zeros(hidden_states.shape[0], self.seq_length_out + 1, self.nbones + 1, self.config.decoder_hidden_size, device=p.device)
+        h_1 = torch.zeros(hidden_states.shape[0], self.seq_length_out + 1, self.nbones + 1, self.config.hidden_size, device=p.device)
         # identify whether it is train or test
         if p.shape[1] != 1:
             h_1[:, 1:, 1:, :] = p
         else:
             h_1[:, 1:2, 1:, :] = p
         c_h_1 = torch.zeros_like(h_1)
-        h_2 = torch.zeros(hidden_states.shape[0], self.seq_length_out + 1, self.nbones + 1, self.config.decoder_hidden_size, device=p.device)
+        h_2 = torch.zeros(hidden_states.shape[0], self.seq_length_out + 1, self.nbones + 1, self.config.hidden_size, device=p.device)
         c_h_2 = torch.zeros_like(h_2)
 
         h_t = hidden_states
@@ -364,7 +347,7 @@ class ST_LSTM(nn.Module):
         for frame in range(self.seq_length_out):
             for i in range(self.config.decoder_recurrent_steps):
                 for bone in range(self.nbones):
-                    cell = self.recurrent_cell_box[i][bone]
+                    cell = self.recurrent_cell_box[i][1][bone]
                     if i == 0:
                         if p.shape[1] != 1 or frame == 0:
                             h_1[:, frame+1, bone+1, :], c_h_1[:, frame+1, bone+1, :] \
@@ -391,30 +374,30 @@ class ST_LSTMCell(nn.Module):
         self.config = config
 
         # input gate
-        self.Ui = torch.nn.Parameter(torch.randn(self.config.decoder_hidden_size, self.config.decoder_hidden_size))
-        self.Wti = torch.nn.Parameter(torch.randn(self.config.decoder_hidden_size, self.config.decoder_hidden_size))
-        self.Wsi = torch.nn.Parameter(torch.randn(self.config.decoder_hidden_size, self.config.decoder_hidden_size))
-        self.bi = torch.nn.Parameter(torch.randn(self.config.decoder_hidden_size))
+        self.Ui = torch.nn.Parameter(torch.randn(self.config.hidden_size, self.config.hidden_size))
+        self.Wti = torch.nn.Parameter(torch.randn(self.config.hidden_size, self.config.hidden_size))
+        self.Wsi = torch.nn.Parameter(torch.randn(self.config.hidden_size, self.config.hidden_size))
+        self.bi = torch.nn.Parameter(torch.randn(self.config.hidden_size))
         # space forget gate
-        self.Us = torch.nn.Parameter(torch.randn(self.config.decoder_hidden_size, self.config.decoder_hidden_size))
-        self.Wts = torch.nn.Parameter(torch.randn(self.config.decoder_hidden_size, self.config.decoder_hidden_size))
-        self.Wss = torch.nn.Parameter(torch.randn(self.config.decoder_hidden_size, self.config.decoder_hidden_size))
-        self.bs = torch.nn.Parameter(torch.randn(self.config.decoder_hidden_size))
+        self.Us = torch.nn.Parameter(torch.randn(self.config.hidden_size, self.config.hidden_size))
+        self.Wts = torch.nn.Parameter(torch.randn(self.config.hidden_size, self.config.hidden_size))
+        self.Wss = torch.nn.Parameter(torch.randn(self.config.hidden_size, self.config.hidden_size))
+        self.bs = torch.nn.Parameter(torch.randn(self.config.hidden_size))
         # time forget gate
-        self.Ut = torch.nn.Parameter(torch.randn(self.config.decoder_hidden_size, self.config.decoder_hidden_size))
-        self.Wtt = torch.nn.Parameter(torch.randn(self.config.decoder_hidden_size, self.config.decoder_hidden_size))
-        self.Wst = torch.nn.Parameter(torch.randn(self.config.decoder_hidden_size, self.config.decoder_hidden_size))
-        self.bt = torch.nn.Parameter(torch.randn(self.config.decoder_hidden_size))
+        self.Ut = torch.nn.Parameter(torch.randn(self.config.hidden_size, self.config.hidden_size))
+        self.Wtt = torch.nn.Parameter(torch.randn(self.config.hidden_size, self.config.hidden_size))
+        self.Wst = torch.nn.Parameter(torch.randn(self.config.hidden_size, self.config.hidden_size))
+        self.bt = torch.nn.Parameter(torch.randn(self.config.hidden_size))
         # output gate
-        self.Uo = torch.nn.Parameter(torch.randn(self.config.decoder_hidden_size, self.config.decoder_hidden_size))
-        self.Wto = torch.nn.Parameter(torch.randn(self.config.decoder_hidden_size, self.config.decoder_hidden_size))
-        self.Wso = torch.nn.Parameter(torch.randn(self.config.decoder_hidden_size, self.config.decoder_hidden_size))
-        self.bo = torch.nn.Parameter(torch.randn(self.config.decoder_hidden_size))
+        self.Uo = torch.nn.Parameter(torch.randn(self.config.hidden_size, self.config.hidden_size))
+        self.Wto = torch.nn.Parameter(torch.randn(self.config.hidden_size, self.config.hidden_size))
+        self.Wso = torch.nn.Parameter(torch.randn(self.config.hidden_size, self.config.hidden_size))
+        self.bo = torch.nn.Parameter(torch.randn(self.config.hidden_size))
         # c_hat gate
-        self.Uc = torch.nn.Parameter(torch.randn(self.config.decoder_hidden_size, self.config.decoder_hidden_size))
-        self.Wtc = torch.nn.Parameter(torch.randn(self.config.decoder_hidden_size, self.config.decoder_hidden_size))
-        self.Wsc = torch.nn.Parameter(torch.randn(self.config.decoder_hidden_size, self.config.decoder_hidden_size))
-        self.bc = torch.nn.Parameter(torch.randn(self.config.decoder_hidden_size))
+        self.Uc = torch.nn.Parameter(torch.randn(self.config.hidden_size, self.config.hidden_size))
+        self.Wtc = torch.nn.Parameter(torch.randn(self.config.hidden_size, self.config.hidden_size))
+        self.Wsc = torch.nn.Parameter(torch.randn(self.config.hidden_size, self.config.hidden_size))
+        self.bc = torch.nn.Parameter(torch.randn(self.config.hidden_size))
 
     def forward(self, x, h_t, h_s, c_t, c_s):
 

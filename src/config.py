@@ -16,10 +16,10 @@ class TrainConfig(object):
     hidden_size = 16                        # Number of hidden units for HMR
     decoder_hidden_size = 64            # Number of hidden units for decoders
     batch_size = 8                              # Batch size for training
-    learning_rate = 0.001                       # Learning rate
+    learning_rate = 0.0008                       # Learning rate
     max_epoch = 500                              # Maximum training epochs
     training_size = 20                       # Training iterations per epoch
-    validation_size = 100                       # Validation iterations per epoch
+    validation_size = 10                       # Validation iterations per epoch
     share_encoder_weights = False      # share encoder weight at each recurrent step
     restore = False                             # Restore the trained weights or restart training from scratch
     longterm = False                            # Whether we are doing super longterm prediction

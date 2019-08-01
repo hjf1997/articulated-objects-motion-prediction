@@ -26,6 +26,8 @@ def train(config):
     train_loader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True)
     test_dataset, _ = choose(train=True)
     test_loader = DataLoader(test_dataset, batch_size=config.batch_size, shuffle=True)
+    prediction_dataset, bone_length = choose(prediction=True)
+    prediction_loader = DataLoader(prediction_dataset, batch_size=config.batch_size, shuffle=True)
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print('Device {} will be used'.format(device))
@@ -34,16 +36,15 @@ def train(config):
     net.to(device)
     print('Total param number:' + str(sum(p.numel() for p in net.parameters())))
     print('Encoder param number:' + str(sum(p.numel() for p in net.encoder_cell.parameters())))
-    print('Decoder param number:' + str(sum(p.numel() for p in net.decoder.parameters())))
+    print('Decoder param number:' + str(sum(p.numel() for p in net.st_lstm.parameters())))
 
     net = torch.nn.DataParallel(net)
-    save_model = torch.load(r'./model/_Epoch_242 Loss_0.0066.pth')
-    model_dict = net.state_dict()
-    state_dict = {k: v for k, v in save_model.items() if k in model_dict.keys()}
-    state_dict.pop('module.weights_out')
-    state_dict.pop('module.weights_in')
-    model_dict.update(state_dict)
-    net.load_state_dict(model_dict)
+    net.load_state_dict(torch.load('./model/_Epoch_242 Loss_0.0066.pth'))
+    # save_model = torch.load(r'./model/_Epoch_242 Loss_0.0066.pth')
+    # model_dict = net.state_dict()
+    # state_dict = {k: v for k, v in save_model.items() if k in model_dict.keys()}
+    # model_dict.update(state_dict)
+    # net.load_state_dict(model_dict)
 
     if torch.cuda.device_count() > 1:
         print("Let's use {} GPUs!".format(str(torch.cuda.device_count())))
@@ -94,13 +95,28 @@ def train(config):
                     for i, data in enumerate(test_loader, 0):
                         encoder_inputs = data['encoder_inputs'].float().to(device)
                         decoder_inputs = data['decoder_inputs'].float().to(device)
-                        decoder_outputs = data['decoder_outputs'].float().to(device)
+                        decoder_outputs = data['decoder_outputs'][:, :10, :].float().to(device)
                         prediction = net(encoder_inputs, decoder_inputs, train=False)
                         loss = linearizedlie_loss(prediction, decoder_outputs, bone_length)
                         run_loss += loss.item()
                     test_loss += run_loss/(i+1)
                     prog_valid.update(it+1, [("Training Loss", run_loss/(i+1))])
             test_loss /= config.validation_size
+
+        # Test prediction
+        with torch.no_grad():
+            av_loss = 0.0
+            for i, data in enumerate(prediction_loader, 0):
+                x_text = data['x_text'].float().to(device)
+                dec_in_test = data['dec_in_test'].float().to(device)
+                y_text = data['y_text'].float().to(device)  # .cpu().numpy()
+                pred = net(x_text, dec_in_test, train=False)  # .cpu().numpy()
+                loss = linearizedlie_loss(pred, y_text[:, :10, :], bone_length)
+                print(loss.item())
+                av_loss += loss.item()
+                y_text = y_text.cpu().numpy()
+                pred = pred.cpu().numpy()
+                mean_error, _ = utils.mean_euler_error(config, 'default', pred, y_text[:, :10, :])
 
         if test_loss < best_val_loss:
             medel_name = checkpoint_dir + "Epoch_" + str(epoch+1) + " Loss_" + str(round(test_loss, 2))
@@ -126,7 +142,7 @@ def prediction(config, checkpoint_filename):
     net.to(device)
     print('Total param number:' + str(sum(p.numel() for p in net.parameters())))
     print('Encoder param number:' + str(sum(p.numel() for p in net.encoder_cell.parameters())))
-    print('Decoder param number:' + str(sum(p.numel() for p in net.decoder.parameters())))
+    print('Decoder param number:' + str(sum(p.numel() for p in net.st_lstm.parameters())))
 
     #if torch.cuda.device_count() > 1:
      #   print("Let's use {} GPUs!".format(str(torch.cuda.device_count())))
