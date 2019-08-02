@@ -11,11 +11,11 @@ class FormatDataPre(object):
     def __init__(self):
         pass
 
-    def __call__(self, x_text, y_text):
+    def __call__(self, x_test, y_test):
 
-        dec_in_test = x_text[-1:, :]
-        x_text = x_text[:-1, :]
-        return {'x_text': x_text, 'dec_in_test': dec_in_test, 'y_text': y_text}
+        dec_in_test = x_test[-1:, :]
+        x_test = x_test[:-1, :]
+        return {'x_test': x_test, 'dec_in_test': dec_in_test, 'y_test': y_test}
 
 
 class FormatData(object):
@@ -259,7 +259,7 @@ class FishDataset(Dataset):
             sample = self.lie_tsfm(self.data[idx])
         elif self.config.datatype == 'xyz':
             pass
-        sample = self.formatdata(sample, self.train)
+        sample = self.formatdata(sample, False)
         return sample
 
     def __len__(self):

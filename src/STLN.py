@@ -278,7 +278,7 @@ class ST_LSTM(nn.Module):
         for i in range(config.decoder_recurrent_steps):
             print("Prepare decoder for rec {}".format(str(i+1)))
             cells = torch.nn.ModuleList()
-            for frame in range(1): # self.seq_length_out
+            for frame in range(1):  # self.seq_length_out
                 cells_frame = torch.nn.ModuleList()
                 for bone in range(nbones):
                     cell = ST_LSTMCell(config)
@@ -347,7 +347,7 @@ class ST_LSTM(nn.Module):
         for frame in range(self.seq_length_out):
             for i in range(self.config.decoder_recurrent_steps):
                 for bone in range(self.nbones):
-                    cell = self.recurrent_cell_box[i][1][bone]
+                    cell = self.recurrent_cell_box[i][0][bone]
                     if i == 0:
                         if p.shape[1] != 1 or frame == 0:
                             h_1[:, frame+1, bone+1, :], c_h_1[:, frame+1, bone+1, :] \

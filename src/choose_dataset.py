@@ -50,7 +50,7 @@ class DatasetChooser(object):
                 elif self.dataset == 'Fish':
                     bone_length_path = './data/Fish/Test/y_test_lie/test_0_lie.mat'
                     data = loader.FishPredictionDataset(self.config)
-                    self.config.input_size = data[0]['x_text'].shape[1]
+                    self.config.input_size = data[0]['x_test'].shape[1]
                 elif self.dataset == 'Mouse':
                     pass
                 elif self.dataset == 'CSL':

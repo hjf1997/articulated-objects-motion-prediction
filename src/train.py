@@ -24,7 +24,7 @@ def train(config):
     choose = DatasetChooser(config)
     train_dataset, bone_length = choose(train=True)
     train_loader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True)
-    test_dataset, _ = choose(train=True)
+    test_dataset, _ = choose(train=False)
     test_loader = DataLoader(test_dataset, batch_size=config.batch_size, shuffle=True)
     prediction_dataset, bone_length = choose(prediction=True)
     prediction_loader = DataLoader(prediction_dataset, batch_size=config.batch_size, shuffle=True)
@@ -39,7 +39,7 @@ def train(config):
     print('Decoder param number:' + str(sum(p.numel() for p in net.st_lstm.parameters())))
 
     net = torch.nn.DataParallel(net)
-    net.load_state_dict(torch.load('./model/_Epoch_242 Loss_0.0066.pth'))
+    net.load_state_dict(torch.load('./model/Epoch_101 Loss_0.0505.pth'))
     # save_model = torch.load(r'./model/_Epoch_242 Loss_0.0066.pth')
     # model_dict = net.state_dict()
     # state_dict = {k: v for k, v in save_model.items() if k in model_dict.keys()}
@@ -107,16 +107,16 @@ def train(config):
         with torch.no_grad():
             av_loss = 0.0
             for i, data in enumerate(prediction_loader, 0):
-                x_text = data['x_text'].float().to(device)
+                x_test = data['x_test'].float().to(device)
                 dec_in_test = data['dec_in_test'].float().to(device)
-                y_text = data['y_text'].float().to(device)  # .cpu().numpy()
-                pred = net(x_text, dec_in_test, train=False)  # .cpu().numpy()
-                loss = linearizedlie_loss(pred, y_text[:, :10, :], bone_length)
+                y_test = data['y_test'].float().to(device)  # .cpu().numpy()
+                pred = net(x_test, dec_in_test, train=False)  # .cpu().numpy()
+                loss = linearizedlie_loss(pred, y_test[:, :10, :], bone_length)
                 print(loss.item())
                 av_loss += loss.item()
-                y_text = y_text.cpu().numpy()
+                y_test = y_test.cpu().numpy()
                 pred = pred.cpu().numpy()
-                mean_error, _ = utils.mean_euler_error(config, 'default', pred, y_text[:, :10, :])
+                mean_error, _ = utils.mean_euler_error(config, 'default', pred, y_test[:, :10, :])
 
         if test_loss < best_val_loss:
             medel_name = checkpoint_dir + "Epoch_" + str(epoch+1) + " Loss_" + str(round(test_loss, 2))
@@ -150,19 +150,20 @@ def prediction(config, checkpoint_filename):
     net.load_state_dict(torch.load(checkpoint_filename, map_location='cuda:0'))
     with torch.no_grad():
         for i, data in enumerate(prediction_loader, 0):
-            x_text = data['x_text'].float().to(device)
+            x_test = data['x_test'].float().to(device)
             dec_in_test = data['dec_in_test'].float().to(device)
-            y_text = data['y_text'].float().to(device)#.cpu().numpy()
-            pred = net(x_text, dec_in_test, train=False)#.cpu().numpy()
-            loss = linearizedlie_loss(pred, y_text[:, :100, :], bone_length)
+            y_test = data['y_test'].float().to(device)#.cpu().numpy()
+            pred = net(x_test, dec_in_test, train=False)#.cpu().numpy()
+            loss = linearizedlie_loss(pred, y_test[:, :100, :], bone_length)
             print(loss.item())
-            y_text = y_text.cpu().numpy()
+            y_test = y_test.cpu().numpy()
             pred = pred.cpu().numpy()
-            mean_error, _ = utils.mean_euler_error(config, 'default', pred, y_text[:, :100, :])
+            mean_error, _ = utils.mean_euler_error(config, 'default', pred, y_test[:, :100, :])
+    return mean_error
 
 
 if __name__ == '__main__':
 
     config = config.TrainConfig('Fish', 'lie', 'all')
-    #prediction(config, './model/_Epoch_242 Loss_0.0066.pth')
-    train(config)
+    mean_error = prediction(config, './model/Epoch_101 Loss_0.0505.pth')
+    #train(config)
