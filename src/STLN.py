@@ -319,30 +319,81 @@ class ST_LSTM(nn.Module):
         #             h[:, frame+1, bone+1, :], c_h[:, frame+1, bone+1, :] \
         #                 = cell(h[:, frame+1, bone+1, :].clone(), h[:, frame, bone+1, :].clone(),
         #                        h[:, frame+1, bone, :].clone(), c_h[:, frame, bone+1, :].clone(), c_h[:, frame+1, bone, :].clone())
+        #
+        # h_1 = torch.zeros(hidden_states.shape[0], self.seq_length_out + 1, self.nbones + 1, self.config.hidden_size, device=p.device)
+        # # identify whether it is train or test
+        # if p.shape[1] != 1:
+        #     h_1[:, 1:, 1:, :] = p
+        # else:
+        #     h_1[:, 1:2, 1:, :] = p
+        # c_h_1 = torch.zeros_like(h_1)
+        # h_2 = torch.zeros(hidden_states.shape[0], self.seq_length_out + 1, self.nbones + 1, self.config.hidden_size, device=p.device)
+        # c_h_2 = torch.zeros_like(h_2)
+        #
+        # h_t = hidden_states
+        # h_s = hidden_states
+        # h_1[:, 1:, 0, :] = torch.mean(torch.mean(h_s, dim=2), dim=1, keepdim=True)
+        # c_h_1[:, 1:, 0, :] = torch.mean(torch.mean(cell_states, dim=2), dim=1, keepdim=True)
+        # h_1[:, 0, 1:, :] = torch.mean(h_t, dim=1)
+        # c_h_1[:, 0, 1:, :] = torch.mean(cell_states, dim=1)
+        #
+        # h_t = torch.cat((global_t_state.unsqueeze(1), hidden_states), dim=1)
+        # h_s = torch.cat((global_s_state.unsqueeze(2), hidden_states), dim=2)
+        # h_2[:, 1:, 0, :] = torch.mean(torch.mean(h_s, dim=2), dim=1, keepdim=True)
+        # c_h_2[:, 1:, 0, :] = torch.mean(torch.mean(cell_states, dim=2), dim=1, keepdim=True)
+        # h_2[:, 0, 1:, :] = torch.mean(h_t, dim=1)
+        # c_h_2[:, 0, 1:, :] = torch.mean(cell_states, dim=1)
+        #
+        # for frame in range(self.seq_length_out):
+        #     for i in range(self.config.decoder_recurrent_steps):
+        #         for bone in range(self.nbones):
+        #             cell = self.recurrent_cell_box[i][0][bone]
+        #             if i == 0:
+        #                 if p.shape[1] != 1 or frame == 0:
+        #                     h_1[:, frame+1, bone+1, :], c_h_1[:, frame+1, bone+1, :] \
+        #                         = cell(h_1[:, frame+1, bone+1, :].clone(), h_1[:, frame, bone+1, :].clone(),
+        #                             h_1[:, frame+1, bone, :].clone(), c_h_1[:, frame, bone+1, :].clone(), c_h_1[:, frame+1, bone, :].clone())
+        #                 else:
+        #                     h_1[:, frame+1, bone+1, :], c_h_1[:, frame+1, bone+1, :] \
+        #                         = cell(h_2[:, frame, bone+1, :].clone(), h_1[:, frame, bone+1, :].clone(),
+        #                             h_1[:, frame+1, bone, :].clone(), c_h_1[:, frame, bone+1, :].clone(), c_h_1[:, frame+1, bone, :].clone())
+        #             else:
+        #                 h_2[:, frame + 1, bone + 1, :], c_h_2[:, frame + 1, bone + 1, :] \
+        #                     = cell(h_1[:, frame + 1, bone + 1, :].clone(), h_2[:, frame, bone + 1, :].clone(),
+        #                            h_2[:, frame + 1, bone, :].clone(), c_h_2[:, frame, bone + 1, :].clone(),
+        #                            c_h_2[:, frame + 1, bone, :].clone())
 
-        h_1 = torch.zeros(hidden_states.shape[0], self.seq_length_out + 1, self.nbones + 1, self.config.hidden_size, device=p.device)
-        # identify whether it is train or test
-        if p.shape[1] != 1:
-            h_1[:, 1:, 1:, :] = p
-        else:
-            h_1[:, 1:2, 1:, :] = p
-        c_h_1 = torch.zeros_like(h_1)
-        h_2 = torch.zeros(hidden_states.shape[0], self.seq_length_out + 1, self.nbones + 1, self.config.hidden_size, device=p.device)
-        c_h_2 = torch.zeros_like(h_2)
+        #print("Train finished")
 
-        h_t = hidden_states
-        h_s = hidden_states
-        h_1[:, 1:, 0, :] = torch.mean(torch.mean(h_s, dim=2), dim=1, keepdim=True)
-        c_h_1[:, 1:, 0, :] = torch.mean(torch.mean(cell_states, dim=2), dim=1, keepdim=True)
-        h_1[:, 0, 1:, :] = torch.mean(h_t, dim=1)
-        c_h_1[:, 0, 1:, :] = torch.mean(cell_states, dim=1)
+        # define decoder hidden states and cell states
+        h = []
+        c_h = []
+        for i in range(self.config.decoder_recurrent_steps):
+            h.append(torch.zeros(hidden_states.shape[0], self.seq_length_out + 1, self.nbones + 1, self.config.hidden_size,
+                              device=p.device))
+            c_h.append(torch.zeros_like(h[i]))
+            # feed init hidden states and cell states into h and c_h
+            if i == 0:
+                if p.shape[1] != 1:
+                    h[i][:, 1:, 1:, :] = p
+                else:
+                    h[i][:, 1:2, 1:, :] = p
 
-        h_t = torch.cat((global_t_state.unsqueeze(1), hidden_states), dim=1)
-        h_s = torch.cat((global_s_state.unsqueeze(2), hidden_states), dim=2)
-        h_2[:, 1:, 0, :] = torch.mean(torch.mean(h_s, dim=2), dim=1, keepdim=True)
-        c_h_2[:, 1:, 0, :] = torch.mean(torch.mean(cell_states, dim=2), dim=1, keepdim=True)
-        h_2[:, 0, 1:, :] = torch.mean(h_t, dim=1)
-        c_h_2[:, 0, 1:, :] = torch.mean(cell_states, dim=1)
+                h_t = hidden_states
+                h_s = hidden_states
+            elif i == 1:
+                h_t = torch.cat((global_t_state.unsqueeze(1), hidden_states), dim=1)
+                h_s = hidden_states
+            elif i == 2:
+                h_t = hidden_states
+                h_s = torch.cat((global_s_state.unsqueeze(2), hidden_states), dim=2)
+            else:
+                print('The max decoder num is 3!')
+
+            h[i][:, 1:, 0, :] = torch.mean(torch.mean(h_s, dim=2), dim=1, keepdim=True)
+            c_h[i][:, 1:, 0, :] = torch.mean(torch.mean(cell_states, dim=2), dim=1, keepdim=True)
+            h[i][:, 0, 1:, :] = torch.mean(h_t, dim=1)
+            c_h[i][:, 0, 1:, :] = torch.mean(cell_states, dim=1)
 
         for frame in range(self.seq_length_out):
             for i in range(self.config.decoder_recurrent_steps):
@@ -350,21 +401,17 @@ class ST_LSTM(nn.Module):
                     cell = self.recurrent_cell_box[i][0][bone]
                     if i == 0:
                         if p.shape[1] != 1 or frame == 0:
-                            h_1[:, frame+1, bone+1, :], c_h_1[:, frame+1, bone+1, :] \
-                                = cell(h_1[:, frame+1, bone+1, :].clone(), h_1[:, frame, bone+1, :].clone(),
-                                    h_1[:, frame+1, bone, :].clone(), c_h_1[:, frame, bone+1, :].clone(), c_h_1[:, frame+1, bone, :].clone())
+                            input = h[i][:, frame+1, bone+1, :].clone()
                         else:
-                            h_1[:, frame+1, bone+1, :], c_h_1[:, frame+1, bone+1, :] \
-                                = cell(h_2[:, frame, bone+1, :].clone(), h_1[:, frame, bone+1, :].clone(),
-                                    h_1[:, frame+1, bone, :].clone(), c_h_1[:, frame, bone+1, :].clone(), c_h_1[:, frame+1, bone, :].clone())
+                            input = h[-1][:, frame, bone + 1, :].clone()
                     else:
-                        h_2[:, frame + 1, bone + 1, :], c_h_2[:, frame + 1, bone + 1, :] \
-                            = cell(h_1[:, frame + 1, bone + 1, :].clone(), h_2[:, frame, bone + 1, :].clone(),
-                                   h_2[:, frame + 1, bone, :].clone(), c_h_2[:, frame, bone + 1, :].clone(),
-                                   c_h_2[:, frame + 1, bone, :].clone())
+                        input = h[i-1][:, frame + 1, bone + 1, :].clone()
 
-        #print("Train finished")
-        return h_2[:, 1:, 1:, :], c_h_2[:, 1:, 1:, :]
+                    h[i][:, frame+1, bone+1, :], c_h[i][:, frame+1, bone+1, :] \
+                        = cell(input, h[i][:, frame, bone+1, :].clone(),
+                            h[i][:, frame+1, bone, :].clone(), c_h[i][:, frame, bone+1, :].clone(), c_h[i][:, frame+1, bone, :].clone())
+
+        return h[-1][:, 1:, 1:, :], c_h[-1][:, 1:, 1:, :]
 
 
 class ST_LSTMCell(nn.Module):

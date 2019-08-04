@@ -76,6 +76,90 @@ def mean_euler_error(config, action, y_predict, y_test):
     mme_mean = np.mean(mme[toprint_idx[idx]])
     return mme, mme_mean
 
+def forward_kinematics(data, config, bone):
+
+
+    chain_idx = config.chain_idx
+    skip = config.skip
+    nframes = data.shape[0]
+    data = data.reshape([nframes, -1, 3])
+
+    omega_idx = []
+    for i in range(len(chain_idx)):
+        for j in range(chain_idx[i].shape[0]):
+            if j < chain_idx[i].shape[0]-1:
+                omega_idx.append(chain_idx[i][j]-i)
+            else:
+                omega_idx.append(-1)
+
+    njoints = len(omega_idx)
+
+    lie_params = np.zeros([nframes, njoints, 6])
+
+    for i in range(njoints):
+        if omega_idx[i] == -1:
+            continue
+        else:
+            lie_params[:, i, 0:3] = data[:, omega_idx[i], :]
+    lie_params[:, :, 3:6] = bone
+    lie_params[:, 0, 3:6] = np.zeros([3])
+
+
+    joint_xyz_f = np.zeros([nframes, njoints, 3])
+
+    for i in range(nframes):
+        for j in range(np.min([len(skip)-1,3])):
+            joint_xyz_f[i, np.arange(skip[j], skip[j + 1]), :] = computelie(
+                np.squeeze(lie_params[i, np.arange(skip[j], skip[j + 1]), :]))
+        if len(skip) >5:
+            lie_params[i, 17, 3:6] = joint_xyz_f[i, 14, :]
+            lie_params[i, 22, 3:6] = joint_xyz_f[i, 14, :]
+        for j in range(3, len(skip)-1):
+            joint_xyz_f[i, np.arange(skip[j], skip[j + 1]), :] = computelie(
+                np.squeeze(lie_params[i, np.arange(skip[j], skip[j + 1]), :]))
+    return joint_xyz_f
+
+
+def computelie(lie_params):
+    njoints = np.shape(lie_params)[0]
+    A = np.zeros((njoints, 4, 4))
+
+    for j in range(njoints):
+        if j == 0:
+            A[j, :, :] = lietomatrix(lie_params[j, 0: 3].T, lie_params[j, 3:6].T)
+        else:
+            A[j, :, :] = np.matmul(np.squeeze(A[j - 1, :, :]),
+                                   lietomatrix(lie_params[j, 0:3].T, lie_params[j, 3:6].T))
+
+    joint_xyz = np.zeros((njoints, 3))
+
+    for j in range(njoints):
+        coor = np.array([0, 0, 0, 1]).reshape((4, 1))
+        xyz = np.matmul(np.squeeze(A[j, :, :]), coor)
+        joint_xyz[j, :] = xyz[0:3, 0]
+
+    return joint_xyz
+
+def lietomatrix(angle, trans):
+    R = expmap2rotmat(angle)
+    T = trans
+    SEmatrix = np.concatenate((np.concatenate((R, T.reshape(3, 1)), axis=1), np.array([[0, 0, 0, 1]])))
+
+    return SEmatrix
+
+def fk(data, config, bone):
+    if config.dataset == 'Human':
+        pass
+        # xyz = []
+        # for frame in range(config.test_output_window):
+        #     xyz_new = forward_kinematics_h36m(data[frame])
+        #     xyz.append(xyz_new)
+        # xyz = np.array(xyz)
+    else:
+        xyz = forward_kinematics(data, config, bone)
+    return xyz
+
+
 class Progbar(object):
     """Progbar class copied from https://github.com/fchollet/keras/
 

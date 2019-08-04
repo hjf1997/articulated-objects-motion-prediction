@@ -299,7 +299,7 @@ class MouseDataset(Dataset):
             sample = self.lie_tsfm(self.data[idx])
         elif self.config.datatype == 'xyz':
             pass
-        sample = self.formatdata(sample, self.train)
+        sample = self.formatdata(sample, False)
         return sample
 
     def __len__(self):
@@ -363,6 +363,9 @@ class FishPredictionDataset(Dataset):
 class MousePredictionDataset(Dataset):
 
     def __init__(self, config):
+        self.config = config
+        self.lie_tsfm = LieTsfm(config)
+        self.formatdata = FormatDataPre()
 
         if config.datatype == 'lie':
             x = []
@@ -395,7 +398,8 @@ class MousePredictionDataset(Dataset):
             y_sample = self.lie_tsfm(self.y[idx])
         elif self.config.datatype == 'xyz':
             pass
-        return {'x': x_sample, 'y': y_sample}
+        sample = self.formatdata(x_sample, y_sample)
+        return sample
 
 
 
