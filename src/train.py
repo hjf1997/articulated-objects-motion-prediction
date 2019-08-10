@@ -37,12 +37,12 @@ def train(config):
     net.to(device)
     print('Total param number:' + str(sum(p.numel() for p in net.parameters())))
     print('Encoder param number:' + str(sum(p.numel() for p in net.encoder_cell.parameters())))
-    print('Decoder param number:' + str(sum(p.numel() for p in net.st_lstm.parameters())))
+    print('Decoder param number:' + str(sum(p.numel() for p in net.decoder.parameters())))
 
     if torch.cuda.device_count() > 1:
         print("Let's use {} GPUs!".format(str(torch.cuda.device_count())))
     net = torch.nn.DataParallel(net) # device_ids=[1, 2, 3]
-    net.load_state_dict(torch.load('./model/Epoch_101 Loss_0.0505.pth'))
+   # net.load_state_dict(torch.load('./model/Epoch_101 Loss_0.0505.pth'))
     # save_model = torch.load(r'./model/_Epoch_242 Loss_0.0066.pth')
     # model_dict = net.state_dict()
     # state_dict = {k: v for k, v in save_model.items() if k in model_dict.keys()}
@@ -116,7 +116,7 @@ def train(config):
 
             if error.sum() < best_error.sum():
                 best_error = error
-                torch.save(net.state_dict(),'./model/4Epoch_' + str(epoch + 1) + ' Loss_' + str(round(av_loss / (i + 1), 4)) + '.pth')
+                torch.save(net.state_dict(),'./model/Epoch_' + str(epoch + 1) + ' Loss_' + str(round(av_loss / (i + 1), 4)) + '.pth')
             print('Current best mean_error: '+str(round(best_error[0], 2)) + ' & ' + str(round(best_error[1], 2)) + ' & ' + str(round(best_error[2], 2))
                   + ' & ' + str(round(best_error[3], 2)))
 
@@ -126,7 +126,7 @@ def prediction(config, checkpoint_filename):
     # Start testing model!
 
     # generate data loader
-    config.output_window_size = 100
+    config.output_window_size = 75
     choose = DatasetChooser(config)
     if config.datatype is not 'Human':
         prediction_dataset, bone_length = choose(prediction=True)
@@ -139,12 +139,12 @@ def prediction(config, checkpoint_filename):
     net.to(device)
     print('Total param number:' + str(sum(p.numel() for p in net.parameters())))
     print('Encoder param number:' + str(sum(p.numel() for p in net.encoder_cell.parameters())))
-    print('Decoder param number:' + str(sum(p.numel() for p in net.st_lstm.parameters())))
+    print('Decoder param number:' + str(sum(p.numel() for p in net.decoder.parameters())))
 
     #if torch.cuda.device_count() > 1:
     #    print("Let's use {} GPUs!".format(str(torch.cuda.device_count())))
     net = torch.nn.DataParallel(net)
-    net.load_state_dict(torch.load(checkpoint_filename, map_location='cuda:0'))
+    #net.load_state_dict(torch.load(checkpoint_filename, map_location='cuda:0'))
     with torch.no_grad():
         # This loop runs only once.
         for i, data in enumerate(prediction_loader, 0):
@@ -157,6 +157,8 @@ def prediction(config, checkpoint_filename):
             pred = pred.cpu().numpy()
 
     if config.datatype == 'lie':
+        print(pred.shape)
+        print(y_test.shape)
         mean_error, _ = utils.mean_euler_error(config, 'default', pred, y_test[:, :100, :])
 
         for i in range(pred.shape[0]):
@@ -177,6 +179,6 @@ def prediction(config, checkpoint_filename):
 
 if __name__ == '__main__':
 
-    config = config.TrainConfig('Fish', 'lie', 'all')
-    prediction(config, './model/share32Epoch_1 Loss_0.0607.pth')
-    #train(config)
+    config = config.TrainConfig('Mouse', 'lie', 'all')
+    #prediction(config, './model/mouse.pth')
+    train(config)

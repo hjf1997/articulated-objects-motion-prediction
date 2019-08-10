@@ -18,8 +18,8 @@ class TrainConfig(object):
     batch_size = 8                              # Batch size for training
     learning_rate = 0.0008                       # Learning rate
     max_epoch = 500                              # Maximum training epochs
-    training_size = 20                       # Training iterations per epoch
-    validation_size = 10                       # Validation iterations per epoch
+    training_size = 1000                       # Training iterations per epoch
+    validation_size = 20                       # Validation iterations per epoch
     share_encoder_weights = True      # share encoder weight at each recurrent step
     restore = False                             # Restore the trained weights or restart training from scratch
     longterm = False                            # Whether we are doing super longterm prediction
@@ -27,9 +27,12 @@ class TrainConfig(object):
     keep_prob = 0.8                               # Keep probability for RNN cell weights
     context_window = 1                          # Context window size in HMR
     encoder_recurrent_steps = 6                       # Number of recurrent steps in HMR
-    decoder_recurrent_steps = 3            # Number of recurrent steps in LS-STLM decoder
+    decoder_recurrent_steps = 2            # Number of recurrent steps in LS-STLM decoder
     bone_dim = 3                                  # dimension of one bone representation
     visualize = True
+
+    decoder_name = ['lstm', 'st_lstm']
+    decoder = decoder_name[0]
 
     def __init__(self, dataset, datatype, action):
         self.dataset = dataset
