@@ -144,7 +144,7 @@ def prediction(config, checkpoint_filename):
     #if torch.cuda.device_count() > 1:
     #    print("Let's use {} GPUs!".format(str(torch.cuda.device_count())))
     net = torch.nn.DataParallel(net)
-    #net.load_state_dict(torch.load(checkpoint_filename, map_location='cuda:0'))
+    net.load_state_dict(torch.load(checkpoint_filename, map_location='cuda:0'))
     with torch.no_grad():
         # This loop runs only once.
         for i, data in enumerate(prediction_loader, 0):

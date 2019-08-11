@@ -30,6 +30,8 @@ class TrainConfig(object):
     decoder_recurrent_steps = 2            # Number of recurrent steps in LS-STLM decoder
     bone_dim = 3                                  # dimension of one bone representation
     visualize = True
+    trust_gate = True
+    noise_gate = True
 
     decoder_name = ['lstm', 'st_lstm']
     decoder = decoder_name[0]
@@ -38,6 +40,9 @@ class TrainConfig(object):
         self.dataset = dataset
         self.datatype = datatype
         self.filename = action
+
+        if not self.trust_gate:
+            self.noise_gate = False
 
         """Define kinematic chain configurations based on dataset class"""
         if self.dataset == 'Fish':
