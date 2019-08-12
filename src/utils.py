@@ -5,7 +5,6 @@ import time
 import numpy as np
 import copy
 
-
 def expmap2rotmat(A):
     theta = np.linalg.norm(A)
     if theta == 0:

@@ -30,8 +30,8 @@ class TrainConfig(object):
     decoder_recurrent_steps = 2            # Number of recurrent steps in LS-STLM decoder
     bone_dim = 3                                  # dimension of one bone representation
     visualize = True
-    trust_gate = True
-    noise_gate = True
+    trust_gate =False
+    noise_gate = False
 
     decoder_name = ['lstm', 'st_lstm']
     decoder = decoder_name[0]

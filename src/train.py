@@ -180,5 +180,5 @@ def prediction(config, checkpoint_filename):
 if __name__ == '__main__':
 
     config = config.TrainConfig('Mouse', 'lie', 'all')
-    #prediction(config, './model/mouse.pth')
-    train(config)
+    prediction(config, './model/mouse1.pth')
+    #train(config)
