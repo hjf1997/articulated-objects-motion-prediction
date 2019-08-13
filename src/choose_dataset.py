@@ -81,20 +81,12 @@ class DatasetChooser(object):
 
         njoints = rawdata.shape[1]
         bone = np.zeros([njoints, 3])
-        # 最后一个不需要，因为是第6个chain开始的下标，一共只有5个
-        bone_skip = self.config.skip[0:-1]
         if self.config.datatype == 'lie':
             for i in range(njoints):
-                if i in bone_skip:
-                    continue
-                else:
-                    bone[i, 0] = round(rawdata[0, i, 3], 2)
+                bone[i, 0] = round(rawdata[0, i, 3], 2)
         elif self.config.datatype == 'xyz':
             for i in range(njoints):
-                if i in bone_skip:
-                    continue
-                else:
-                    bone[i, 0] = round(np.linalg.norm(rawdata[0, i, :] - rawdata[0, i - 1, :]), 2)
+                bone[i, 0] = round(np.linalg.norm(rawdata[0, i, :] - rawdata[0, i - 1, :]), 2)
 
         return bone
 

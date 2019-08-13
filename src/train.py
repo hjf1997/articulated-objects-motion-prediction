@@ -42,7 +42,7 @@ def train(config):
     if torch.cuda.device_count() > 1:
         print("Let's use {} GPUs!".format(str(torch.cuda.device_count())))
     net = torch.nn.DataParallel(net) # device_ids=[1, 2, 3]
-   # net.load_state_dict(torch.load('./model/Epoch_101 Loss_0.0505.pth'))
+    #net.load_state_dict(torch.load('./model/Epoch_101 Loss_0.0505.pth'))
     # save_model = torch.load(r'./model/_Epoch_242 Loss_0.0066.pth')
     # model_dict = net.state_dict()
     # state_dict = {k: v for k, v in save_model.items() if k in model_dict.keys()}
@@ -174,11 +174,12 @@ def prediction(config, checkpoint_filename):
             y_t_xyz = utils.fk(y_t, config, bone_length)
 
             if config.visualize:
+                # 蓝色是我的
                 pre_plot = plot_animation(y_t_xyz, y_p_xyz, config, None)
                 pre_plot.plot()
 
 if __name__ == '__main__':
 
-    config = config.TrainConfig('Mouse', 'lie', 'all')
+    config = config.TrainConfig('Fish', 'lie', 'all')
     prediction(config, './model/mouse1.pth')
     #train(config)

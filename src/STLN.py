@@ -28,7 +28,6 @@ class ST_HMR(nn.Module):
         if config.decoder == 'st_lstm':
             self.decoder = ST_LSTM(config, nbones)
         elif config.decoder == 'lstm':
-            print(1)
             self.decoder = LSTM_decoder(config, nbones)
 
         self.weights_in = torch.nn.Parameter(torch.empty(config.input_size,

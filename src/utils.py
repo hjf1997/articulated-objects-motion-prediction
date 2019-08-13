@@ -75,47 +75,26 @@ def mean_euler_error(config, action, y_predict, y_test):
     mme_mean = np.mean(mme[toprint_idx[idx]])
     return mme, mme_mean
 
+
 def forward_kinematics(data, config, bone):
 
-
-    chain_idx = config.chain_idx
-    skip = config.skip
     nframes = data.shape[0]
     data = data.reshape([nframes, -1, 3])
 
-    omega_idx = []
-    for i in range(len(chain_idx)):
-        for j in range(chain_idx[i].shape[0]):
-            if j < chain_idx[i].shape[0]-1:
-                omega_idx.append(chain_idx[i][j]-i)
-            else:
-                omega_idx.append(-1)
-
-    njoints = len(omega_idx)
+    njoints = data.shape[1] + 1
 
     lie_params = np.zeros([nframes, njoints, 6])
 
-    for i in range(njoints):
-        if omega_idx[i] == -1:
-            continue
-        else:
-            lie_params[:, i, 0:3] = data[:, omega_idx[i], :]
+    for i in range(njoints - 1):
+        lie_params[:, i, 0:3] = data[:, i, :]
+
     lie_params[:, :, 3:6] = bone
     lie_params[:, 0, 3:6] = np.zeros([3])
-
 
     joint_xyz_f = np.zeros([nframes, njoints, 3])
 
     for i in range(nframes):
-        for j in range(np.min([len(skip)-1,3])):
-            joint_xyz_f[i, np.arange(skip[j], skip[j + 1]), :] = computelie(
-                np.squeeze(lie_params[i, np.arange(skip[j], skip[j + 1]), :]))
-        if len(skip) >5:
-            lie_params[i, 17, 3:6] = joint_xyz_f[i, 14, :]
-            lie_params[i, 22, 3:6] = joint_xyz_f[i, 14, :]
-        for j in range(3, len(skip)-1):
-            joint_xyz_f[i, np.arange(skip[j], skip[j + 1]), :] = computelie(
-                np.squeeze(lie_params[i, np.arange(skip[j], skip[j + 1]), :]))
+        joint_xyz_f[i, :, :] = computelie(np.squeeze(lie_params[i, :, :]))
     return joint_xyz_f
 
 
