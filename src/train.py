@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 import numpy as np
 from utils import Progbar
 from choose_dataset import DatasetChooser
-from loss import linearizedlie_loss
+from loss import linearizedlie_loss, l2_loss
 import utils
 import scipy.io as sio
 import torch.optim as optim
@@ -78,7 +78,8 @@ def train(config):
                 prediction = net(encoder_inputs, decoder_inputs, train=True)
                 #print('___')
                 #print(torch.sum(prediction))
-                loss = linearizedlie_loss(prediction, decoder_outputs, bone_length)
+                #loss = linearizedlie_loss(prediction, decoder_outputs, bone_length)
+                loss = l2_loss(prediction, decoder_outputs)
                 run_loss += loss.item()
                 net.zero_grad()
                 loss.backward()
@@ -126,12 +127,15 @@ def prediction(config, checkpoint_filename):
     # Start testing model!
 
     # generate data loader
-    config.output_window_size = 75
+    config.output_window_size = 100
     choose = DatasetChooser(config)
-    if config.datatype is not 'Human':
-        prediction_dataset, bone_length = choose(prediction=True)
-        prediction_loader = DataLoader(prediction_dataset, batch_size=config.batch_size, shuffle=True)
+    if config.datatype is 'Human':
+        _, _ = choose(train=True) # get mean value etc for unnorm
 
+    prediction_dataset, bone_length = choose(prediction=True)
+    x_test, y_test, dec_in_test = prediction_dataset
+
+    actions = list(x_test.keys())
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print('Device {} will be used to save parameters'.format(device))
     torch.cuda.manual_seed(973)
@@ -145,41 +149,43 @@ def prediction(config, checkpoint_filename):
     #    print("Let's use {} GPUs!".format(str(torch.cuda.device_count())))
     net = torch.nn.DataParallel(net)
     net.load_state_dict(torch.load(checkpoint_filename, map_location='cuda:0'))
+    y_predict = {}
     with torch.no_grad():
         # This loop runs only once.
-        for i, data in enumerate(prediction_loader, 0):
-            x_test = data['x_test'].float().to(device)
-            dec_in_test = data['dec_in_test'].float().to(device)
-            y_test = data['y_test'].float().to(device)#.cpu().numpy()
-            pred = net(x_test, dec_in_test, train=False)#.cpu().numpy()
-            #loss = linearizedlie_loss(pred, y_test[:, :100, :], bone_length)
-            y_test = y_test.cpu().numpy()
+        for act in actions:
+            x_test_ = torch.from_numpy(x_test[act]).float().to(device)
+            dec_in_test_ = torch.from_numpy(dec_in_test[act]).float().to(device)
+            pred = net(x_test_, dec_in_test_, train=False)
             pred = pred.cpu().numpy()
+            y_predict[act] = pred
 
-    if config.datatype == 'lie':
-        print(pred.shape)
-        print(y_test.shape)
-        mean_error, _ = utils.mean_euler_error(config, 'default', pred, y_test[:, :100, :])
 
-        for i in range(pred.shape[0]):
-            if config.datatype == 'Human':
-                pass
-            else:
-                y_p = pred[i]
-                #y_p = np.concatenate([x_test[i], y_p], axis=0)
-                y_t = y_test[i]
-                #y_t = np.concatenate([x_test[i], y_t], axis=0)
+    for act in actions:
+        if config.datatype == 'lie':
+            mean_error, _ = utils.mean_euler_error(config, act, y_predict[act], y_test[act])
 
-            y_p_xyz = utils.fk(y_p, config, bone_length)
-            y_t_xyz = utils.fk(y_t, config, bone_length)
+            for i in range(y_predict[act].shape[0]):
+                if config.datatype == 'Human':
+                    y_p = utils.unNormalizeData(y_predict[act][i], config.data_mean, config.data_std, config.dim_to_ignore)
+                    y_t = utils.unNormalizeData(y_test[act][i], config.data_mean, config.data_std, config.dim_to_ignore)
+                    expmap_all = utils.revert_coordinate_space(np.vstack((y_t, y_p)), np.eye(3), np.zeros(3))
+                    y_p = expmap_all[config.test_output_window:]
+                    y_t = expmap_all[:config.test_output_window]
+                else:
+                    y_p = y_predict[act][i]
+                    y_t = y_test[act][i]
 
-            if config.visualize:
-                # 蓝色是我的
-                pre_plot = plot_animation(y_t_xyz, y_p_xyz, config, None)
-                pre_plot.plot()
+                y_p_xyz = utils.fk(y_p, config, bone_length)
+                y_t_xyz = utils.fk(y_t, config, bone_length)
+
+                filename = act + '_' + str(i)
+                if config.visualize:
+                    # 蓝色是我的
+                    pre_plot = plot_animation(y_t_xyz, y_p_xyz, config, filename)
+                    pre_plot.plot()
 
 if __name__ == '__main__':
 
     config = config.TrainConfig('Fish', 'lie', 'all')
-    prediction(config, './model/mouse1.pth')
+    prediction(config, './model/fishEpoch_63 Loss_0.0249.pth')
     #train(config)

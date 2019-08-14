@@ -143,9 +143,21 @@ def normalize_data(data, data_mean, data_std, dim_to_use):
     """
     data_out = []
 
-    for idx in len(data):
+    for idx in range(len(data)):
         data_out.append(np.divide((data[idx] - data_mean), data_std))
         data_out[-1] = data_out[-1][:, dim_to_use]
+
+    return data_out
+
+def normalize_data_dir(data, data_mean, data_std, dim_to_use):
+    """
+    Copied from https://github.com/una-dinosauria/human-motion-prediction
+    """
+    data_out = {}
+
+    for key in data.keys():
+        data_out[key] = np.divide((data[key] - data_mean), data_std)
+        data_out[key] = data_out[key][:, dim_to_use]
 
     return data_out
 
@@ -192,6 +204,39 @@ def unNormalizeData(normalizedData, data_mean, data_std, dimensions_to_ignore):
     origData = np.multiply(origData, stdMat) + meanMat
     return origData
 
+
+def revert_coordinate_space(channels, R0, T0):
+    """
+    Copied from https://github.com/una-dinosauria/human-motion-prediction
+    """
+    n, d = channels.shape
+
+    channels_rec = copy.copy(channels)
+    R_prev = R0
+    T_prev = T0
+    rootRotInd = np.arange(3, 6)
+
+    # Loop through the passed posses
+    for ii in range(n):
+        R_diff = expmap2rotmat(channels[ii, rootRotInd])
+        R = R_diff.dot(R_prev)
+
+        channels_rec[ii, rootRotInd] = np.reshape(rotmat2expmap(R), 3)
+        T = T_prev + ((R_prev.T).dot(np.reshape(channels[ii, :3], [3, 1]))).reshape(-1)
+        channels_rec[ii, :3] = T
+        T_prev = T
+        R_prev = R
+
+    return channels_rec
+
+def rotmat2expmap(R):
+    theta = np.arccos((np.trace(R) - 1) / 2.0)
+    if theta < 1e-6:
+        A = np.zeros((3, 1))
+    else:
+        A = theta / (2 * np.sin(theta)) * np.array([[R[2, 1] - R[1, 2]], [R[0, 2] - R[2, 0]], [R[1, 0] - R[0, 1]]])
+
+    return A
 
 class Progbar(object):
     """Progbar class copied from https://github.com/fchollet/keras/

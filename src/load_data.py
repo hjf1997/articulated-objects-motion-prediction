@@ -6,6 +6,7 @@ import scipy.io as sio
 import copy
 import utils
 
+
 class FormatDataPre(object):
 
     def __init__(self):
@@ -187,7 +188,10 @@ class HumanDataset(Dataset):
         self.lie_tsfm = LieTsfm(config)
         self.formatdata = FormatData(config)
         if config.datatype == 'lie':
-            train_path = './data/h3.6m/Train/train_lie'
+            if train:
+                train_path = './data/h3.6m/Train/train_lie'
+            else:
+                train_path = './data/h3.6m/Test/test_lie'
         elif config.datatype == 'xyz':
             train_path = './data/h3.6m/Train/train_xyz'
         if train:
@@ -207,11 +211,11 @@ class HumanDataset(Dataset):
             for action in actions:
                 for i in range(2):
                     if config.datatype == 'lie':
-                        filename = '{0}/S{1}_{2}_{3}_lie.mat'.format(train_path, id, action, i+1)
+                        filename = '{0}/{1}_{2}_{3}_lie.mat'.format(train_path, id, action, i+1)
                         rawdata = sio.loadmat(filename)['lie_parameters']
                         set.append(rawdata)
                     elif config.datatype == 'xyz':
-                        filename = '{0}/S{1}_{2}_{3}_xyz.mat'.format(train_path, id, action, i+1)
+                        filename = '{0}/{1}_{2}_{3}_xyz.mat'.format(train_path, id, action, i+1)
                         rawdata = sio.loadmat(filename)['joint_xyz']
                         set.append(rawdata.reshape(rawdata.shape[0], -1))
 
@@ -223,14 +227,14 @@ class HumanDataset(Dataset):
         if not train and config.data_mean is None:
             print('Load train dataset first!')
 
-        if train:
+        if train and config.datatype == 'lie':
             data_mean, data_std, dim_to_ignore, dim_to_use = utils.normalization_stats(complete_train)
             config.data_mean = data_mean
             config.data_std = data_std
             config.dim_to_ignore = dim_to_ignore
             config.dim_to_use = dim_to_use
 
-        set = utils.normalize_data(set, data_mean, data_std, dim_to_use)
+        set = utils.normalize_data(set, config.data_mean, config.data_std, config.dim_to_use)
 
         self.data = set
 
@@ -241,10 +245,10 @@ class HumanDataset(Dataset):
     def __getitem__(self, idx):
 
         if self.config.datatype == 'lie':
-            sample = self.lie_tsfm(self.data[idx])
+            pass
         elif self.config.datatype == 'xyz':
             pass
-        sample = self.formatdata(sample)
+        sample = self.formatdata(self.data[idx], False)
         return sample
 
 
@@ -382,19 +386,21 @@ class FishPredictionDataset(Dataset):
         return sample
 
 
-class MousePredictionDataset(Dataset):
+class AnimalPredictionDataset(object):
 
     def __init__(self, config):
         self.config = config
-        self.lie_tsfm = LieTsfm(config)
-        self.formatdata = FormatDataPre()
 
         if config.datatype == 'lie':
             x = []
             y = []
+            if self.config.dataset == 'Mouse':
+                set_name = 'Mouse'
+            elif self.config.dataset == 'Fish':
+                set_name = 'Fish'
             for i in range(8):
-                x_filename = './data/Mouse/Test/x_test_lie/test_' + str(i) + '_lie.mat'
-                y_filename = './data/Mouse/Test/y_test_lie/test_' + str(i) + '_lie.mat'
+                x_filename = './data/' + set_name + '/Test/x_test_lie/test_' + str(i) + '_lie.mat'
+                y_filename = './data/' + set_name + '/Test/y_test_lie/test_' + str(i) + '_lie.mat'
 
                 x_rawdata = sio.loadmat(x_filename)
                 x_rawdata = x_rawdata[list(x_rawdata.keys())[3]]
@@ -402,26 +408,128 @@ class MousePredictionDataset(Dataset):
                 y_rawdata = sio.loadmat(y_filename)
                 y_rawdata = y_rawdata[list(y_rawdata.keys())[3]]
 
-                x.append(x_rawdata)
-                y.append(y_rawdata)
-            self.x = x
-            self.y = y
+                x_data = x_rawdata[:, :-1, :3].reshape(x_rawdata.shape[0], -1)
+                x.append(x_data)
+
+                y_data = y_rawdata[:, :-1, :3].reshape(y_rawdata.shape[0], -1)
+                y.append(y_data)
+        elif config.datatype == 'xyz':
+            pass
+
+        x = np.array(x)
+        y = np.array(y)
+        dec_in_test = np.reshape(x[:, -1, :], [x.shape[0], 1, x.shape[2]])
+        x = x[:, 0:-1, :]
+
+        self.x_test_dict = {}
+        self.y_test_dict = {}
+        self.dec_in_test_dict = {}
+
+        self.x_test_dict['default'] = x
+        self.y_test_dict['default'] = y
+        self.dec_in_test_dict['default'] = dec_in_test
+
+    def get_data(self):
+
+        return [self.x_test_dict, self.y_test_dict, self.dec_in_test_dict]
+
+class HumanPredictionDataset(object):
+
+    def __init__(self, config):
+        self.config = config
+        if config.filename == 'all':
+            self.actions = ['directions', 'discussion', 'eating', 'greeting', 'phoning', 'posing', 'purchases', 'sitting',
+                       'sittingdown', 'smoking', 'takingphoto', 'waiting', 'walking', 'walkingdog', 'walkingtogether']
         else:
-            pass
+            self.actions = [config.filename]
 
-    def __len__(self):
+        test_set = {}
+        for subj in [5]:
+            for action in self.actions:
+                for subact in [1, 2]:
+                    if config.datatype == 'lie':
+                        filename = '{0}/S{1}_{2}_{3}_lie.mat'.format('./data/h3.6m/Test/test_lie', subj, action, subact)
+                        test_set[(subj, action, subact)] = sio.loadmat(filename)['lie_parameters']
 
-        return len(self.x)
+                    if config.datatype == 'xyz':
+                        filename = '{0}/S{1}_{2}_{3}_xyz.mat'.format('./data/h3.6m/Test/test_xyz', subj, action, subact)
+                        test_set[(subj, action, subact)] = sio.loadmat(filename)['joint_xyz']
+                        test_set[(subj, action, subact)] = test_set[(subj, action, subact)].reshape(
+                            test_set[(subj, action, subact)].shape[0], -1)
+        if config.data_mean is None:
+            print('Load  train set first!')
+        self.test_set = utils.normalize_data_dir(test_set, config.data_mean, config.data_std, config.dim_to_use)
 
-    def __getitem__(self, idx):
+    def get_data(self):
+        x_test = {}
+        y_test = {}
+        dec_in_test = {}
+        for action in self.actions:
+            print(action)
+            encoder_inputs, decoder_inputs, decoder_outputs = self.get_batch_srnn(self.config, self.test_set, action, self.config.output_window_size)
+            x_test[action] = encoder_inputs
+            y_test[action] = decoder_outputs
+            dec_in_test[action] = np.zeros(decoder_inputs.shape)
+            dec_in_test[action][:, 0, :] = decoder_inputs[:, 0, :]
+        return [x_test, y_test, dec_in_test]
 
-        if self.config.datatype == 'lie':
-            x_sample = self.lie_tsfm(self.x[idx])
-            y_sample = self.lie_tsfm(self.y[idx])
-        elif self.config.datatype == 'xyz':
-            pass
-        sample = self.formatdata(x_sample, y_sample)
-        return sample
+    def get_batch_srnn(self, config, data, action, target_seq_len):
+        # Obtain SRNN test sequences using the specified random seeds
 
+        frames = {}
+        frames[action] = self.find_indices_srnn(data, action)
 
+        batch_size = 8
+        subject = 5
+        source_seq_len = config.input_window_size
+
+        seeds = [(action, (i % 2) + 1, frames[action][i]) for i in range(batch_size)]
+
+        encoder_inputs = np.zeros((batch_size, source_seq_len - 1, config.input_size), dtype=float)
+        decoder_inputs = np.zeros((batch_size, target_seq_len, config.input_size), dtype=float)
+        decoder_outputs = np.zeros((batch_size, target_seq_len, config.input_size), dtype=float)
+
+        for i in range(batch_size):
+            _, subsequence, idx = seeds[i]
+            idx = idx + 50
+
+            data_sel = data[(subject, action, subsequence)]
+
+            data_sel = data_sel[(idx - source_seq_len):(idx + target_seq_len), :]
+
+            encoder_inputs[i, :, :] = data_sel[0:source_seq_len - 1, :]  # x_test
+            decoder_inputs[i, :, :] = data_sel[source_seq_len - 1:(source_seq_len + target_seq_len - 1),
+                                      :]  # decoder_in_test
+            decoder_outputs[i, :, :] = data_sel[source_seq_len:, :]  # y_test
+
+        return [encoder_inputs, decoder_inputs, decoder_outputs]
+
+    def find_indices_srnn(self, data, action):
+        """
+        Obtain the same action indices as in SRNN using a fixed random seed
+        See https://github.com/asheshjain399/RNNexp/blob/master/structural_rnn/CRFProblems/H3.6m/processdata.py
+        """
+
+        SEED = 1234567890
+        rng = np.random.RandomState(SEED)
+
+        subject = 5
+        subaction1 = 1
+        subaction2 = 2
+
+        T1 = data[(subject, action, subaction1)].shape[0]
+        T2 = data[(subject, action, subaction2)].shape[0]
+        prefix, suffix = 50, 100
+
+        idx = []
+        idx.append(rng.randint(16, T1 - prefix - suffix))
+        idx.append(rng.randint(16, T2 - prefix - suffix))
+        idx.append(rng.randint(16, T1 - prefix - suffix))
+        idx.append(rng.randint(16, T2 - prefix - suffix))
+        idx.append(rng.randint(16, T1 - prefix - suffix))
+        idx.append(rng.randint(16, T2 - prefix - suffix))
+        idx.append(rng.randint(16, T1 - prefix - suffix))
+        idx.append(rng.randint(16, T2 - prefix - suffix))
+
+        return idx
 

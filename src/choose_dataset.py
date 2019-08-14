@@ -17,9 +17,8 @@ class DatasetChooser(object):
         if not prediction:
             if self.config.datatype == 'lie':
                 if self.dataset == 'Human':
-                    bone_length_path = './data/Human/Test/y_test_lie/directions' \
-                                        '_0_lie.mat'
-                    data = loader.H36mDataset(self.config, train=train)
+                    bone_length_path = None
+                    data = loader.HumanDataset(self.config, train=train)
                     self.config.input_size = data[0]['encoder_inputs'].shape[1]
                 elif self.dataset == 'Fish':
                     bone_length_path = './data/Fish/Test/y_test_lie/test_0_lie.mat'
@@ -43,18 +42,20 @@ class DatasetChooser(object):
         else:
             if self.config.datatype == 'lie':
                 if self.dataset == 'Human':
-                    bone_length_path = './data/Human/Test/y_test_lie/directions' \
-                                        '_0_lie.mat'
-                    data = loader.FishPredictionDataset(self.config)
-                    self.config.input_size = data[0]['x'].shape[1]
+                    bone_length_path = None
+                    data_loader = loader.HumanPredictionDataset(self.config)
+                    data = data_loader.get_data()
+                    self.config.input_size = data[0][list(data[0].keys())[0]].shape[2]
                 elif self.dataset == 'Fish':
                     bone_length_path = './data/Fish/Test/y_test_lie/test_0_lie.mat'
-                    data = loader.FishPredictionDataset(self.config)
-                    self.config.input_size = data[0]['x_test'].shape[1]
+                    data_loader = loader.AnimalPredictionDataset(self.config)
+                    data = data_loader.get_data()
+                    self.config.input_size = data[0][list(data[0].keys())[0]].shape[2]
                 elif self.dataset == 'Mouse':
                     bone_length_path = './data/Mouse/Test/y_test_lie/test_0_lie.mat'
-                    data = loader.MousePredictionDataset(self.config)
-                    self.config.input_size = data[0]['x_test'].shape[1]
+                    data_loader = loader.AnimalPredictionDataset(self.config)
+                    data = data_loader.get_data()
+                    self.config.input_size = data[0][list(data[0].keys())[0]].shape[2]
                 elif self.dataset == 'CSL':
                     pass
             elif self.config.datatype == 'xyz':
@@ -66,11 +67,43 @@ class DatasetChooser(object):
                     pass
                 elif self.dataset == 'CSL':
                     pass
-
-        rawdata = sio.loadmat(bone_length_path)
-        rawdata = rawdata[list(rawdata.keys())[3]]
-        bone = self.cal_bone_length(rawdata)
-
+        if bone_length_path is not None:
+            rawdata = sio.loadmat(bone_length_path)
+            rawdata = rawdata[list(rawdata.keys())[3]]
+            bone = self.cal_bone_length(rawdata)
+        else:
+            bone = np.array([[0., 0., 0.],
+                             [132.95, 0., 0.],
+                             [442.89, 0., 0.],
+                             [454.21, 0., 0.],
+                             [162.77, 0., 0.],
+                             [75., 0., 0.],
+                             [132.95, 0., 0.],
+                             [442.89, 0., 0.],
+                             [454.21, 0., 0.],
+                             [162.77, 0., 0.],
+                             [75., 0., 0.],
+                             [0., 0., 0.],
+                             [233.38, 0., 0.],
+                             [257.08, 0., 0.],
+                             [121.13, 0., 0.],
+                             [115., 0., 0.],
+                             [257.08, 0., 0.],
+                             [151.03, 0., 0.],
+                             [278.88, 0., 0.],
+                             [251.73, 0., 0.],
+                             [0., 0., 0.],
+                             [100., 0., 0.],
+                             [137.5, 0., 0.],
+                             [0., 0., 0.],
+                             [257.08, 0., 0.],
+                             [151.03, 0., 0.],
+                             [278.88, 0., 0.],
+                             [251.73, 0., 0.],
+                             [0., 0., 0.],
+                             [100., 0., 0.],
+                             [137.5, 0., 0.],
+                             [0., 0., 0.]])
 
         return data, bone
 
