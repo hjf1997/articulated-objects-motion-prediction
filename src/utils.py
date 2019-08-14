@@ -137,6 +137,61 @@ def fk(data, config, bone):
         xyz = forward_kinematics(data, config, bone)
     return xyz
 
+def normalize_data(data, data_mean, data_std, dim_to_use):
+    """
+    Copied and modified from https://github.com/una-dinosauria/human-motion-prediction
+    """
+    data_out = []
+
+    for idx in len(data):
+        data_out.append(np.divide((data[idx] - data_mean), data_std))
+        data_out[-1] = data_out[-1][:, dim_to_use]
+
+    return data_out
+
+def normalization_stats(completeData):
+    """
+    Copied from https://github.com/una-dinosauria/human-motion-prediction
+    """
+    data_mean = np.mean(completeData, axis=0)
+    data_std = np.std(completeData, axis=0)
+
+    dimensions_to_ignore = []
+    dimensions_to_use = []
+
+    dimensions_to_ignore.extend(list(np.where(data_std < 1e-4)[0]))
+    dimensions_to_use.extend(list(np.where(data_std >= 1e-4)[0]))
+
+    data_std[dimensions_to_ignore] = 1.0
+
+    return [data_mean, data_std, dimensions_to_ignore, dimensions_to_use]
+
+
+def unNormalizeData(normalizedData, data_mean, data_std, dimensions_to_ignore):
+    """
+    Copied from https://github.com/una-dinosauria/human-motion-prediction
+    """
+
+    T = normalizedData.shape[0]
+    D = data_mean.shape[0]
+
+    origData = np.zeros((T, D), dtype=np.float32)
+    dimensions_to_use = []
+    for i in range(D):
+        if i in dimensions_to_ignore:
+            continue
+        dimensions_to_use.append(i)
+    dimensions_to_use = np.array(dimensions_to_use)
+
+    origData[:, dimensions_to_use] = normalizedData
+
+    stdMat = data_std.reshape((1, D))
+    stdMat = np.repeat(stdMat, T, axis=0)
+    meanMat = data_mean.reshape((1, D))
+    meanMat = np.repeat(meanMat, T, axis=0)
+    origData = np.multiply(origData, stdMat) + meanMat
+    return origData
+
 
 class Progbar(object):
     """Progbar class copied from https://github.com/fchollet/keras/

@@ -4,7 +4,7 @@ from torch.utils.data import Dataset
 import numpy as np
 import scipy.io as sio
 import copy
-
+import utils
 
 class FormatDataPre(object):
 
@@ -187,11 +187,9 @@ class HumanDataset(Dataset):
         self.lie_tsfm = LieTsfm(config)
         self.formatdata = FormatData(config)
         if config.datatype == 'lie':
-            train_path = './data/Human/Train/train_lie/'
-            tail = '_lie.mat'
+            train_path = './data/h3.6m/Train/train_lie'
         elif config.datatype == 'xyz':
-            train_path = './data/Human/Train/train_lie/'
-            tail = '_xyz.mat'
+            train_path = './data/h3.6m/Train/train_xyz'
         if train:
             subjects = ['S1', 'S6', 'S7', 'S8', 'S9', 'S11']
         else:
@@ -204,13 +202,36 @@ class HumanDataset(Dataset):
             actions = [config.filename]
 
         set = []
-        for action in actions:
-            for id in subjects:
+        complete_train = []
+        for id in subjects:
+            for action in actions:
                 for i in range(2):
-                    filename = train_path + id + '_' + action + '_' + str(i+1) + tail
-                    rawdata = sio.loadmat(filename)
-                    rawdata = rawdata[list(rawdata.keys())[3]]
-                    set.append(rawdata)
+                    if config.datatype == 'lie':
+                        filename = '{0}/S{1}_{2}_{3}_lie.mat'.format(train_path, id, action, i+1)
+                        rawdata = sio.loadmat(filename)['lie_parameters']
+                        set.append(rawdata)
+                    elif config.datatype == 'xyz':
+                        filename = '{0}/S{1}_{2}_{3}_xyz.mat'.format(train_path, id, action, i+1)
+                        rawdata = sio.loadmat(filename)['joint_xyz']
+                        set.append(rawdata.reshape(rawdata.shape[0], -1))
+
+                if len(complete_train) == 0:
+                    complete_train = copy.deepcopy(set[-1])
+                else:
+                    complete_train = np.append(complete_train, set[-1], axis=0)
+
+        if not train and config.data_mean is None:
+            print('Load train dataset first!')
+
+        if train:
+            data_mean, data_std, dim_to_ignore, dim_to_use = utils.normalization_stats(complete_train)
+            config.data_mean = data_mean
+            config.data_std = data_std
+            config.dim_to_ignore = dim_to_ignore
+            config.dim_to_use = dim_to_use
+
+        set = utils.normalize_data(set, data_mean, data_std, dim_to_use)
+
         self.data = set
 
     def __len__(self):
