@@ -465,7 +465,6 @@ class HumanPredictionDataset(object):
         y_test = {}
         dec_in_test = {}
         for action in self.actions:
-            print(action)
             encoder_inputs, decoder_inputs, decoder_outputs = self.get_batch_srnn(self.config, self.test_set, action, self.config.output_window_size)
             x_test[action] = encoder_inputs
             y_test[action] = decoder_outputs

@@ -45,9 +45,8 @@ def mean_euler_error(config, action, y_predict, y_test):
     for i in range(n_batch):
         for j in range(nframes):
             if config.dataset == 'Human':
-                pass
-                #pred = unNormalizeData(y_predict[i], config.data_mean, config.data_std, config.dim_to_ignore)
-                #gt = unNormalizeData(y_test[i], config.data_mean, config.data_std, config.dim_to_ignore)
+                pred = unNormalizeData(y_predict[i], config.data_mean, config.data_std, config.dim_to_ignore)
+                gt = unNormalizeData(y_test[i], config.data_mean, config.data_std, config.dim_to_ignore)
             else:
                 pred = copy.deepcopy(y_predict[i])
                 gt = copy.deepcopy(y_test[i])
@@ -127,15 +126,78 @@ def lietomatrix(angle, trans):
 
 def fk(data, config, bone):
     if config.dataset == 'Human':
-        pass
-        # xyz = []
-        # for frame in range(config.test_output_window):
-        #     xyz_new = forward_kinematics_h36m(data[frame])
-        #     xyz.append(xyz_new)
-        # xyz = np.array(xyz)
+        xyz = []
+        for frame in range(config.output_window_size):
+            xyz_new = forward_kinematics_h36m(data[frame])
+            xyz.append(xyz_new)
+        xyz = np.array(xyz)
     else:
         xyz = forward_kinematics(data, config, bone)
     return xyz
+
+
+def forward_kinematics_h36m(angles):
+    """
+    Modified from https://github.com/una-dinosauria/human-motion-prediction
+    """
+    parent = np.array([0, 1, 2, 3, 4, 5, 1, 7, 8, 9, 10, 1, 12, 13, 14, 15, 13,
+                       17, 18, 19, 20, 21, 20, 23, 13, 25, 26, 27, 28, 29, 28, 31]) - 1
+
+    offset = np.array([[0., 0., 0.],
+                       [-132.95, 0., 0.],
+                       [0., -442.89, 0.],
+                       [0., -454.21, 0.],
+                       [0., 0., 162.77],
+                       [0., 0., 75.],
+                       [132.95, 0., 0.],
+                       [0., -442.89, 0.],
+                       [0., -454.21, 0.],
+                       [0., 0., 162.77],
+                       [0., 0., 75.],
+                       [0., 0., 0.],
+                       [0., 233.38, 0.],
+                       [0., 257.08, 0.],
+                       [0., 121.13, 0.],
+                       [0., 115., 0.],
+                       [0., 257.08, 0.],
+                       [0., 151.03, 0.],
+                       [0., 278.88, 0.],
+                       [0., 251.73, 0.],
+                       [0., 0., 0.],
+                       [0., 0., 100.],
+                       [0., 137.5, 0.],
+                       [0., 0., 0.],
+                       [0., 257.08, 0.],
+                       [0., 151.03, 0.],
+                       [0., 278.88, 0.],
+                       [0., 251.73, 0.],
+                       [0., 0., 0.],
+                       [0., 0., 100.],
+                       [0., 137.5, 0.],
+                       [0., 0., 0.]])
+
+    expmapInd = np.split(np.arange(4, 100) - 1, 32)
+
+    # Structure that indicates parents for each joint
+    njoints = 32
+    xyzStruct = [dict() for x in range(njoints)]
+
+    for i in np.arange(njoints):
+        thisRotation = expmap2rotmat(angles[expmapInd[i]])
+
+        if parent[i] == -1:  # Root node
+            xyzStruct[i]['rotation'] = thisRotation
+            # xyzStruct[i]['rotation'] = np.eye(3)
+            xyzStruct[i]['xyz'] = np.reshape(offset[i, :], (1, 3))
+        else:
+            xyzStruct[i]['xyz'] = (offset[i, :]).dot(xyzStruct[parent[i]]['rotation']) + xyzStruct[parent[i]]['xyz']
+            xyzStruct[i]['rotation'] = thisRotation.dot(xyzStruct[parent[i]]['rotation'])
+
+    xyz = [xyzStruct[i]['xyz'] for i in range(njoints)]
+    xyz = np.array(xyz).squeeze()
+    xyz = xyz[:, [0, 2, 1]]
+    return xyz
+
 
 def normalize_data(data, data_mean, data_std, dim_to_use):
     """

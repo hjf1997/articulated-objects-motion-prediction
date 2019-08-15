@@ -11,7 +11,7 @@ import torch.nn.functional as F
 
 class ST_HMR(nn.Module):
 
-    def __init__(self, config, nbones):
+    def __init__(self, config):
         super().__init__()
         self.config = config
         self.encoder_cell = torch.nn.ModuleList()
@@ -26,9 +26,9 @@ class ST_HMR(nn.Module):
 
         # init decoder
         if config.decoder == 'st_lstm':
-            self.decoder = ST_LSTM(config, nbones)
+            self.decoder = ST_LSTM(config)
         elif config.decoder == 'lstm':
-            self.decoder = LSTM_decoder(config, nbones)
+            self.decoder = LSTM_decoder(config)
 
         self.weights_in = torch.nn.Parameter(torch.empty(config.input_size,
                                       int(config.input_size/config.bone_dim*config.hidden_size)).uniform_(-0.04, 0.04))
@@ -291,10 +291,10 @@ class EncoderCell(nn.Module):
 
 class ST_LSTM(nn.Module):
 
-    def __init__(self, config, nbones):
+    def __init__(self, config):
         super().__init__()
         self.config = config
-        self.nbones = nbones
+        self.config = config.nbones
         recurrent_cell_box = torch.nn.ModuleList()
         self.seq_length_out = config.output_window_size
 
@@ -485,13 +485,13 @@ class ST_LSTMCell(nn.Module):
 
 class LSTM_decoder(nn.Module):
 
-    def __init__(self, config, nbones):
+    def __init__(self, config):
         super().__init__()
         self.config = config
         self.seq_length_out = config.output_window_size
-        self.nbones = nbones
+        self.nbones = config.nbones
         self.lstm = nn.ModuleList()
-        input_size = config.hidden_size * nbones
+        input_size = config.hidden_size * self.nbones
         hidden_size = input_size
         for i in range(config.decoder_recurrent_steps):
             self.lstm.append(nn.LSTMCell(input_size, hidden_size))

@@ -28,12 +28,12 @@ def train(config):
     test_dataset, _ = choose(train=False)
     test_loader = DataLoader(test_dataset, batch_size=config.batch_size, shuffle=True)
     prediction_dataset, bone_length = choose(prediction=True)
-    prediction_loader = DataLoader(prediction_dataset, batch_size=config.batch_size, shuffle=True)
+    x_test, y_test, dec_in_test = prediction_dataset
 
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
     print('Device {} will be used to save parameters'.format(device))
     torch.cuda.manual_seed(971103)
-    net = ST_HMR(config, bone_length.shape[0]-1)
+    net = ST_HMR(config) #bone_length.shape[0]-1)
     net.to(device)
     print('Total param number:' + str(sum(p.numel() for p in net.parameters())))
     print('Encoder param number:' + str(sum(p.numel() for p in net.encoder_cell.parameters())))
@@ -41,7 +41,7 @@ def train(config):
 
     if torch.cuda.device_count() > 1:
         print("Let's use {} GPUs!".format(str(torch.cuda.device_count())))
-    net = torch.nn.DataParallel(net) # device_ids=[1, 2, 3]
+    net = torch.nn.DataParallel(net, device_ids=[1, 2, 3]) # device_ids=[1, 2, 3]
     #net.load_state_dict(torch.load('./model/Epoch_101 Loss_0.0505.pth'))
     # save_model = torch.load(r'./model/_Epoch_242 Loss_0.0066.pth')
     # model_dict = net.state_dict()
@@ -56,8 +56,8 @@ def train(config):
     if not (os.path.exists(checkpoint_dir)):
         os.makedirs(checkpoint_dir)
 
-    best_val_loss = float('inf')
-    best_error = np.array([float('inf'), float('inf'), float('inf'), float('inf')])
+    best_error = float('inf')
+    #best_error = np.array([float('inf'), float('inf'), float('inf'), float('inf')])
     for epoch in range(config.max_epoch):
         print("At epoch:{}".format(str(epoch + 1)))
         prog = Progbar(target=config.training_size)
@@ -96,30 +96,34 @@ def train(config):
                         decoder_inputs = data['decoder_inputs'].float().to(device)
                         decoder_outputs = data['decoder_outputs'][:, :10, :].float().to(device)
                         prediction = net(encoder_inputs, decoder_inputs, train=False)
-                        loss = linearizedlie_loss(prediction, decoder_outputs, bone_length)
+                        loss = l2_loss(prediction, decoder_outputs)
+                        #loss = linearizedlie_loss(prediction, decoder_outputs, bone_length)
                         run_loss += loss.item()
                     prog_valid.update(it+1, [("Training Loss", run_loss/(i+1))])
 
         # Test prediction
-        av_loss = 0.0
+        actions = list(x_test.keys())
+        y_predict = {}
         with torch.no_grad():
-            for i, data in enumerate(prediction_loader, 0):
-                x_test = data['x_test'].float().to(device)
-                dec_in_test = data['dec_in_test'].float().to(device)
-                y_test = data['y_test'].float().to(device)  # .cpu().numpy()
-                pred = net(x_test, dec_in_test, train=False)  # .cpu().numpy()
-                loss = linearizedlie_loss(pred, y_test[:, :10, :], bone_length)
-                av_loss += loss.item()
-                y_test = y_test.cpu().numpy()
+            for act in actions:
+                x_test_ = torch.from_numpy(x_test[act]).float().to(device)
+                dec_in_test_ = torch.from_numpy(dec_in_test[act]).float().to(device)
+                pred = net(x_test_, dec_in_test_, train=False)
                 pred = pred.cpu().numpy()
-                mean_error, _ = utils.mean_euler_error(config, 'default', pred, y_test[:, :10, :])
-                error = mean_error[[1, 3, 7, 9]]
+                y_predict[act] = pred
 
-            if error.sum() < best_error.sum():
-                best_error = error
-                torch.save(net.state_dict(),'./model/Epoch_' + str(epoch + 1) + ' Loss_' + str(round(av_loss / (i + 1), 4)) + '.pth')
-            print('Current best mean_error: '+str(round(best_error[0], 2)) + ' & ' + str(round(best_error[1], 2)) + ' & ' + str(round(best_error[2], 2))
-                  + ' & ' + str(round(best_error[3], 2)))
+        error_actions = 0.0
+        for act in actions:
+            if config.datatype == 'lie':
+                mean_error, _ = utils.mean_euler_error(config, act, y_predict[act], y_test[act])
+                error = mean_error[[1, 3, 7, 9]]
+            error_actions += error.mean()
+        error_actions /= len(actions)
+        if error_actions < best_error:
+            best_error = error_actions
+            torch.save(net.state_dict(),'./model/Epoch_' + str(epoch + 1) + ' Error' + str(round(best_error, 4)) + '.pth')
+        # print('Current best mean_error: '+str(round(best_error[0], 2)) + ' & ' + str(round(best_error[1], 2)) + ' & ' + str(round(best_error[2], 2))
+        #       + ' & ' + str(round(best_error[3], 2)))
 
 
 def prediction(config, checkpoint_filename):
@@ -129,7 +133,7 @@ def prediction(config, checkpoint_filename):
     # generate data loader
     config.output_window_size = 100
     choose = DatasetChooser(config)
-    if config.datatype is 'Human':
+    if config.dataset is 'Human':
         _, _ = choose(train=True) # get mean value etc for unnorm
 
     prediction_dataset, bone_length = choose(prediction=True)
@@ -139,7 +143,7 @@ def prediction(config, checkpoint_filename):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print('Device {} will be used to save parameters'.format(device))
     torch.cuda.manual_seed(973)
-    net = ST_HMR(config, nbones=bone_length.shape[0]-1)
+    net = ST_HMR(config)
     net.to(device)
     print('Total param number:' + str(sum(p.numel() for p in net.parameters())))
     print('Encoder param number:' + str(sum(p.numel() for p in net.encoder_cell.parameters())))
@@ -159,18 +163,17 @@ def prediction(config, checkpoint_filename):
             pred = pred.cpu().numpy()
             y_predict[act] = pred
 
-
     for act in actions:
         if config.datatype == 'lie':
             mean_error, _ = utils.mean_euler_error(config, act, y_predict[act], y_test[act])
 
             for i in range(y_predict[act].shape[0]):
-                if config.datatype == 'Human':
+                if config.dataset == 'Human':
                     y_p = utils.unNormalizeData(y_predict[act][i], config.data_mean, config.data_std, config.dim_to_ignore)
                     y_t = utils.unNormalizeData(y_test[act][i], config.data_mean, config.data_std, config.dim_to_ignore)
                     expmap_all = utils.revert_coordinate_space(np.vstack((y_t, y_p)), np.eye(3), np.zeros(3))
-                    y_p = expmap_all[config.test_output_window:]
-                    y_t = expmap_all[:config.test_output_window]
+                    y_p = expmap_all[config.output_window_size:]
+                    y_t = expmap_all[:config.output_window_size]
                 else:
                     y_p = y_predict[act][i]
                     y_t = y_test[act][i]
@@ -186,6 +189,6 @@ def prediction(config, checkpoint_filename):
 
 if __name__ == '__main__':
 
-    config = config.TrainConfig('Fish', 'lie', 'all')
-    prediction(config, './model/fishEpoch_63 Loss_0.0249.pth')
-    #train(config)
+    config = config.TrainConfig('Human', 'lie', 'all')
+    #prediction(config, './model/Epoch_1 Error1.7062.pth')
+    train(config)
