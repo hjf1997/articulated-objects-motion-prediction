@@ -30,10 +30,10 @@ def train(config):
     prediction_dataset, bone_length = choose(prediction=True)
     x_test, y_test, dec_in_test = prediction_dataset
 
-    device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print('Device {} will be used to save parameters'.format(device))
-    torch.cuda.manual_seed(971103)
-    net = ST_HMR(config) #bone_length.shape[0]-1)
+    torch.cuda.manual_seed(9713)
+    net = ST_HMR(config)
     net.to(device)
     print('Total param number:' + str(sum(p.numel() for p in net.parameters())))
     print('Encoder param number:' + str(sum(p.numel() for p in net.encoder_cell.parameters())))
@@ -41,7 +41,7 @@ def train(config):
 
     if torch.cuda.device_count() > 1:
         print("Let's use {} GPUs!".format(str(torch.cuda.device_count())))
-    net = torch.nn.DataParallel(net, device_ids=[1, 2, 3]) # device_ids=[1, 2, 3]
+    net = torch.nn.DataParallel(net)# device_ids=[1, 2, 3]) # device_ids=[1, 2, 3]
     #net.load_state_dict(torch.load('./model/Epoch_101 Loss_0.0505.pth'))
     # save_model = torch.load(r'./model/_Epoch_242 Loss_0.0066.pth')
     # model_dict = net.state_dict()
@@ -189,6 +189,6 @@ def prediction(config, checkpoint_filename):
 
 if __name__ == '__main__':
 
-    config = config.TrainConfig('Human', 'lie', 'all')
-    #prediction(config, './model/Epoch_1 Error1.7062.pth')
+    config = config.TrainConfig('Fish', 'lie', 'all')
+    #prediction(config, './model/Epoch_1 Error2.4019.pth')
     train(config)

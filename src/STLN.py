@@ -62,7 +62,7 @@ class ST_HMR(nn.Module):
 
         for rec in range(self.config.encoder_recurrent_steps):
             hidden_states, cell_states, global_t_state, global_s_state, g_t, c_g_t, g_s, c_g_s, noise = self.encoder_cell[rec](h, c_h, p, g_t, c_g_t, g_s, c_g_s, train)
-
+        #print(hidden_states[:, 0, :, :].abs().mean())
         decoder_p = torch.matmul(decoder_inputs, self.weights_in) + self.bias_in
         decoder_p = decoder_p.view([decoder_p.shape[0], decoder_p.shape[1], int(decoder_p.shape[2]/self.config.hidden_size), self.config.hidden_size])
         prediction, _ = self.decoder(hidden_states, cell_states, global_t_state, global_s_state, decoder_p, noise)
@@ -500,7 +500,7 @@ class LSTM_decoder(nn.Module):
                                                         self.nbones * self.config.hidden_size).uniform_(-0.04, 0.04))
         if config.decoder_recurrent_steps == 3:
             self.Gsaff = torch.nn.Parameter(torch.empty((self.config.input_window_size-1)*self.config.hidden_size,
-                                                        self.nbones * self.config.hidden_size).uniform_(-0.004, 0.004))
+                                                        self.nbones * self.config.hidden_size).uniform_(-0.04, 0.04))
 
     def forward(self, hidden_states, cell_states, global_t_state, global_s_state, p, noise):
 
