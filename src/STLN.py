@@ -303,7 +303,7 @@ class ST_LSTM(nn.Module):
             cells = torch.nn.ModuleList()
             for frame in range(1):  # self.seq_length_out
                 cells_frame = torch.nn.ModuleList()
-                for bone in range(nbones):
+                for bone in range(config.nbones):
                     cell = ST_LSTMCell(config)
                     cells_frame.append(cell)
                 cells.append(cells_frame)

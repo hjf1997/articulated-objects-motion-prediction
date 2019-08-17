@@ -15,6 +15,7 @@ import config
 from plot_animation import plot_animation
 import os
 from STLN import ST_HMR
+from HMR import HMR
 
 
 def train(config):
@@ -32,13 +33,16 @@ def train(config):
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print('Device {} will be used to save parameters'.format(device))
-    torch.cuda.manual_seed(9713)
-    net = ST_HMR(config)
+    torch.cuda.manual_seed(112858)
+    net = HMR(config)
     net.to(device)
     print('Total param number:' + str(sum(p.numel() for p in net.parameters())))
     print('Encoder param number:' + str(sum(p.numel() for p in net.encoder_cell.parameters())))
     print('Decoder param number:' + str(sum(p.numel() for p in net.decoder.parameters())))
-
+    # to = 0.0
+    # for p in net.decoder.parameters():
+    #     to += p.abs().sum()
+    # print(to)
     if torch.cuda.device_count() > 1:
         print("Let's use {} GPUs!".format(str(torch.cuda.device_count())))
     net = torch.nn.DataParallel(net)# device_ids=[1, 2, 3]) # device_ids=[1, 2, 3]
@@ -131,7 +135,7 @@ def prediction(config, checkpoint_filename):
     # Start testing model!
 
     # generate data loader
-    config.output_window_size = 100
+    config.output_window_size = 75
     choose = DatasetChooser(config)
     if config.dataset is 'Human':
         _, _ = choose(train=True) # get mean value etc for unnorm
@@ -143,7 +147,7 @@ def prediction(config, checkpoint_filename):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print('Device {} will be used to save parameters'.format(device))
     torch.cuda.manual_seed(973)
-    net = ST_HMR(config)
+    net = HMR(config)
     net.to(device)
     print('Total param number:' + str(sum(p.numel() for p in net.parameters())))
     print('Encoder param number:' + str(sum(p.numel() for p in net.encoder_cell.parameters())))
@@ -152,7 +156,7 @@ def prediction(config, checkpoint_filename):
     #if torch.cuda.device_count() > 1:
     #    print("Let's use {} GPUs!".format(str(torch.cuda.device_count())))
     net = torch.nn.DataParallel(net)
-    net.load_state_dict(torch.load(checkpoint_filename, map_location='cuda:0'))
+    #net.load_state_dict(torch.load(checkpoint_filename, map_location='cuda:0'))
     y_predict = {}
     with torch.no_grad():
         # This loop runs only once.
@@ -189,6 +193,6 @@ def prediction(config, checkpoint_filename):
 
 if __name__ == '__main__':
 
-    config = config.TrainConfig('Fish', 'lie', 'all')
-    #prediction(config, './model/Epoch_1 Error2.4019.pth')
+    config = config.TrainConfig('Human', 'lie', 'all')
+    #prediction(config, './model/Epoch_13 Error1.9763.pth')
     train(config)
