@@ -293,7 +293,6 @@ class LSTM_decoder(nn.Module):
             # feed init hidden states and cell states into h and c_h
             if i == 0:
                 h_t = hidden_states
-
             elif i == 1:
                 h_t = torch.cat((global_t_state, hidden_states), dim=1)  # 这个是Hg
             else:
@@ -306,7 +305,7 @@ class LSTM_decoder(nn.Module):
             for i in range(self.config.decoder_recurrent_steps):
                 cell = self.lstm[i]
                 if i == 0:
-                    if p.shape[1] != 1 or frame == 0:
+                    if frame == 0:
                         input = p[:, 0, :]
                         input_first = p[:, 0, :]
                     else:
