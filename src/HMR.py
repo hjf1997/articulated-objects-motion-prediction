@@ -285,6 +285,7 @@ class LSTM_decoder(nn.Module):
         # define decoder hidden states and cell states
         h = []
         c_h = []
+        pre = torch.zeros([hidden_states.shape[0], self.seq_length_out, self.config.input_size], device=p.device)
         for i in range(self.config.decoder_recurrent_steps):
             # 双层LSTM
             h.append(torch.zeros(hidden_states.shape[0], self.seq_length_out + 1, self.config.hidden_size, device=p.device))
@@ -307,13 +308,16 @@ class LSTM_decoder(nn.Module):
                 if i == 0:
                     if p.shape[1] != 1 or frame == 0:
                         input = p[:, 0, :]
+                        input_first = p[:, 0, :]
                     else:
-                        input = torch.matmul(h[-1][:, frame, :].clone(), self.weights_out) + self.bias_out
+                        input = pre[:, frame - 1, :].clone()
+                        input_first = pre[:, frame - 1, :].clone()
                 else:
                     input = h[i - 1][:, frame + 1, :].clone()
 
                 h[i][:, frame + 1, :], c_h[i][:, frame + 1, :] = cell(input, (h[i][:, frame, :].clone(), c_h[i][:, frame, :].clone()))
-        pre = h[-1][:, 1:, :]
+            pre[:, frame, :] = torch.matmul(h[-1][:, frame + 1, :].clone(), self.weights_out) + \
+                               self.bias_out + input_first
+
         pre_c = c_h[-1][:, 1:, :]
-        pre = torch.matmul(pre, self.weights_out) + self.bias_out
         return pre, pre_c
