@@ -102,7 +102,7 @@ class ERD_Decoder(nn.Module):
         h = []
         c_h = []
         # 由于下一帧的input不是h，而h又要用，因此要一个output
-        output = torch.empty(self.seq_length_out, enc_state[0][0].shape[0], self.nbones * 3)
+        output = torch.empty(self.seq_length_out, enc_state[0][0].shape[0], self.nbones * 3, device=p.device)
 
         for i in range(self.config.decoder_recurrent_steps):
             # 双层LSTM
@@ -125,7 +125,7 @@ class ERD_Decoder(nn.Module):
 
         for frame in range(self.seq_length_out):
             # 第0帧的时候，输入是p，形状应该是[batch,hidden_size]
-            if (frame == 0):
+            if frame == 0:
                 fc_in_1 = self.fc_in_1(torch.squeeze(p).clone())
             # 如果是第二帧的位置，输入就是上一帧第二层的output的值
             else:

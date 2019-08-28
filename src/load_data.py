@@ -454,7 +454,7 @@ class HumanPredictionDataset(object):
             encoder_inputs, decoder_inputs, decoder_outputs = self.get_batch_srnn(self.config, self.test_set, action, self.config.output_window_size)
             x_test[action] = encoder_inputs
             y_test[action] = decoder_outputs
-            dec_in_test[action] = np.zeros(decoder_inputs.shape)
+            dec_in_test[action] = np.zeros([decoder_inputs.shape[0], 1, decoder_inputs.shape[2]])
             dec_in_test[action][:, 0, :] = decoder_inputs[:, 0, :]
         return [x_test, y_test, dec_in_test]
 

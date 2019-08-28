@@ -44,6 +44,7 @@ def train(config):
     test_loader = DataLoader(test_dataset, batch_size=config.batch_size, shuffle=True)
     prediction_dataset, bone_length = choose(prediction=True)
     x_test, y_test, dec_in_test = prediction_dataset
+    print()
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print('Device {} will be used to save parameters'.format(device))
@@ -56,6 +57,7 @@ def train(config):
     if torch.cuda.device_count() > 1:
         print("Let's use {} GPUs!".format(str(torch.cuda.device_count())))
     net = torch.nn.DataParallel(net)#, device_ids=[1, 2, 3]) # device_ids=[1, 2, 3]
+    #net.load_state_dict(torch.load('./model/Epoch_84 Error0.8422.pth', map_location='cuda:0'))
 
     optimizer = optim.Adam(net.parameters(), lr=config.learning_rate)
 
@@ -137,7 +139,7 @@ def train(config):
         if error_actions < best_error:
             best_error_list = error
             best_error = error_actions
-            torch.save(net.state_dict(),'./model/Epoch_' + str(epoch + 1) + ' Error' + str(round(best_error, 4)) + '.pth')
+            torch.save(net.state_dict(),'./model/ERDEpoch_' + str(epoch + 1) + ' Error' + str(round(best_error, 4)) + '.pth')
         print('Current best:' + str(round(best_error_list[0], 2))+ ' ' + str(round(best_error_list[1], 2)) +
                                     ' ' + str(round(best_error_list[2], 2)) + ' ' + str(round(best_error_list[3], 2)))
 

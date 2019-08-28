@@ -13,7 +13,7 @@ class TrainConfig(object):
     input_window_size = 50                      # Input window size during training
     output_window_size = 10                     # Output window size during training
     #test_output_window = 10                    # Output window size during testing. test_output_window is overwritten by test set size when longterm is true
-    hidden_size = 16                       # Number of hidden units for HMR
+    hidden_size = 300                      # Number of hidden units for HMR
     decoder_hidden_size = 64            # Number of hidden units for decoders
     batch_size = 32                               # Batch size for training
     learning_rate = 0.001                       # Learning rate
@@ -34,7 +34,7 @@ class TrainConfig(object):
     noise_gate = False
 
     models_name = ['ERD', 'LSTM3lr', 'GRU', 'HMR', 'ST_HMR']
-    model = models_name[4]
+    model = models_name[1]
 
     decoder_name = ['lstm', 'st_lstm']
     decoder = decoder_name[0]
