@@ -15,16 +15,16 @@ class TrainConfig(object):
     #test_output_window = 10                    # Output window size during testing. test_output_window is overwritten by test set size when longterm is true
     hidden_size = 16                       # Number of hidden units for HMR
     decoder_hidden_size = 64            # Number of hidden units for decoders
-    batch_size = 8                               # Batch size for training
+    batch_size = 32                               # Batch size for training
     learning_rate = 0.001                       # Learning rate
     max_epoch = 500                              # Maximum training epochs
-    training_size = 20                       # Training iterations per epoch
+    training_size = 20                     # Training iterations per epoch
     validation_size = 20                       # Validation iterations per epoch
     share_encoder_weights = True      # share encoder weight at each recurrent step
     restore = False                             # Restore the trained weights or restart training from scratch
     longterm = False                            # Whether we are doing super longterm prediction
-    early_stop = 10                             # Stop training if validation loss do not improve after these epochs
-    keep_prob = 1.0                              # Keep probability for RNN cell weights
+    early_stop = 6                             # Stop training if validation loss do not improve after these epochs
+    keep_prob = 0.9                              # Keep probability for RNN cell weights
     context_window = 1                          # Context window size in HMR
     encoder_recurrent_steps = 10                       # Number of recurrent steps in HMR
     decoder_recurrent_steps = 2            # Number of recurrent steps in LS-STLM decoder
@@ -33,8 +33,14 @@ class TrainConfig(object):
     trust_gate =False
     noise_gate = False
 
+    models_name = ['ERD', 'LSTM3lr', 'GRU', 'HMR', 'ST_HMR']
+    model = models_name[4]
+
     decoder_name = ['lstm', 'st_lstm']
     decoder = decoder_name[0]
+
+    loss_name = ['l2', 'lie']
+    loss = loss_name[1]
 
     def __init__(self, dataset, datatype, action):
         self.dataset = dataset

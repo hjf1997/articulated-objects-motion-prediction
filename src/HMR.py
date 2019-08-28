@@ -2,6 +2,7 @@
 # create time: 8/1/2019
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 class HMR(nn.Module):
@@ -22,11 +23,11 @@ class HMR(nn.Module):
 
     def forward(self, encoder_inputs, decoder_inputs, train):
         h = torch.matmul(encoder_inputs, self.weights_in) + self.bias_in
-        h = torch.dropout(h, p=self.config.keep_prob, train=train)
+        h = F.dropout(h, p=self.config.keep_prob, training=train)
 
         c_h = torch.empty_like(h)
         c_h.copy_(h)
-        c_h = torch.dropout(c_h, p=self.config.keep_prob, train=train)
+        c_h = F.dropout(c_h, p=self.config.keep_prob, training=train)
 
         hidden_states, cell_states, global_t_state = self.encoder_cell(h, c_h, train)
         #decoder_p = torch.matmul(decoder_inputs, self.weights_in) + self.bias_in

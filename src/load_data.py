@@ -51,19 +51,6 @@ class LieTsfm(object):
     def __call__(self, sample):
         rawdata = sample
 
-        # nframes = rawdata.shape[0]
-        # njoints = rawdata.shape[1]
-        # data = np.zeros([nframes, njoints+1, 3])
-        # # Reorganising the Lie algebra parameters to remove redundancy
-        # # The same as HMR
-        # data[:, 0, :] = rawdata[:, 0, 3:6]
-        # data[:, 1:, :] = rawdata[:, :, 0:3]
-        # # 这里wu shuang的代码写错了，除了skip数组的最后一个在原始data中应该索引不到以外
-        # # 所有都向后面移了一个
-        # #data = np.delete(data, [self.config.skip[:-1]+1], axis=1)
-        # data = np.delete(data, [self.config.skip], axis=1)
-        # data = np.around(data, 5)
-        # data = data.reshape(data.shape[0], -1)
         data = rawdata[:, :-1, :3].reshape(rawdata.shape[0], -1)
         return data
 
@@ -179,7 +166,6 @@ class H36mDataset(Dataset):
 
 
 class HumanDataset(Dataset):
-    """Dismissed due to some reasons"""
 
     def __init__(self, config, train=True):
 

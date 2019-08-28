@@ -4,6 +4,7 @@ import sys
 import time
 import numpy as np
 import copy
+import torch
 
 def expmap2rotmat(A):
     theta = np.linalg.norm(A)
@@ -138,7 +139,7 @@ def fk(data, config, bone):
 
 def forward_kinematics_h36m(angles):
     """
-    Modified from https://github.com/una-dinosauria/human-motion-prediction
+    Modified from forward_kinematics_h36m
     """
     parent = np.array([0, 1, 2, 3, 4, 5, 1, 7, 8, 9, 10, 1, 12, 13, 14, 15, 13,
                        17, 18, 19, 20, 21, 20, 23, 13, 25, 26, 27, 28, 29, 28, 31]) - 1
@@ -198,6 +199,17 @@ def forward_kinematics_h36m(angles):
     xyz = xyz[:, [0, 2, 1]]
     return xyz
 
+def prepare_loss(data, length, dim_to_ignore):
+
+    origData = torch.zeros([data.shape[0], data.shape[1], length], device=data.device)
+    dimensions_to_use = []
+    for i in range(length):
+        if i in dim_to_ignore:
+            continue
+        dimensions_to_use.append(i)
+
+    origData[:, :,dimensions_to_use] = data
+    return origData[:, :, 3:]
 
 def normalize_data(data, data_mean, data_std, dim_to_use):
     """
