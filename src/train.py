@@ -177,7 +177,7 @@ def prediction(config, checkpoint_filename):
         for act in actions:
             x_test_ = torch.from_numpy(x_test[act]).float().to(device)
             dec_in_test_ = torch.from_numpy(dec_in_test[act]).float().to(device)
-            pred = net(x_test_, dec_in_test_, train=True)
+            pred = net(x_test_, dec_in_test_, train=False)
             pred = pred.cpu().numpy()
             y_predict[act] = pred
 
@@ -208,5 +208,5 @@ def prediction(config, checkpoint_filename):
 if __name__ == '__main__':
 
     config = config.TrainConfig('Human', 'lie', 'all')
-    #prediction(config, './model/Epoch_1 Error0.9288.pth')
-    train(config)
+    prediction(config, './model/ST_HMREpoch_18 Error0.7721.pth')
+    #train(config)
