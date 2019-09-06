@@ -31,6 +31,9 @@ class ST_HMR(nn.Module):
         elif config.decoder == 'lstm':
             print('Use LSTM as decoder.')
             self.decoder = LSTM_decoder(config)
+        elif config.decoder == 'Kinematics_lstm':
+            print('Use Kinematics_LSTM as decoder.')
+            self.decoder = Kinematics_LSTM_decoder(config)
 
         self.weights_in = torch.nn.Parameter(torch.empty(config.input_size,
                                       int(config.input_size/config.bone_dim*config.hidden_size)).uniform_(-0.04, 0.04))
@@ -63,7 +66,7 @@ class ST_HMR(nn.Module):
         for rec in range(self.config.encoder_recurrent_steps):
             hidden_states, cell_states, global_t_state, g_t, c_g_t, g_s, c_g_s, noise = self.encoder_cell[rec](h, c_h, p, g_t, c_g_t, g_s, c_g_s, train)
         #print(hidden_states[:, 0, :, :].abs().mean())
-        prediction, _ = self.decoder(hidden_states, cell_states, global_t_state, decoder_inputs, noise)
+        prediction = self.decoder(hidden_states, cell_states, global_t_state, decoder_inputs, noise)
         return prediction
 
 
@@ -409,6 +412,96 @@ class ST_LSTMCell(nn.Module):
 
         return h, c_h
 
+class Kinematics_LSTM_decoder(nn.Module):
+
+    def __init__(self, config):
+        """
+        This decoder only apply to h3.6m dataset.
+        :param config:
+        """
+        super().__init__()
+        self.config = config
+        self.seq_length_out = config.output_window_size
+        self.nbones = config.nbones
+        self.lstm = nn.ModuleList()
+        self.weights_out_spine = torch.nn.Parameter(torch.empty(int(config.input_size/config.bone_dim*config.hidden_size), config.training_chain_length[2]).uniform_(-0.04, 0.04))
+        self.bias_out_spine = torch.nn.Parameter(torch.empty(config.training_chain_length[2]).uniform_(-0.04, 0.04))
+        self.weights_out_leg1 = torch.nn.Parameter(torch.empty(int(config.input_size/config.bone_dim*config.hidden_size), config.training_chain_length[0]).uniform_(-0.04, 0.04))
+        self.bias_out_leg1 = torch.nn.Parameter(torch.empty(config.training_chain_length[0]).uniform_(-0.04, 0.04))
+        self.weights_out_leg2 = torch.nn.Parameter(torch.empty(int(config.input_size/config.bone_dim*config.hidden_size), config.training_chain_length[1]).uniform_(-0.04, 0.04))
+        self.bias_out_leg2 = torch.nn.Parameter(torch.empty(config.training_chain_length[1]).uniform_(-0.04, 0.04))
+        self.weights_out_arm1 = torch.nn.Parameter(torch.empty(int(config.input_size/config.bone_dim*config.hidden_size), config.training_chain_length[3]).uniform_(-0.04, 0.04))
+        self.bias_out_arm1 = torch.nn.Parameter(torch.empty(config.training_chain_length[3]).uniform_(-0.04, 0.04))
+        self.weights_out_arm2 = torch.nn.Parameter(torch.empty(int(config.input_size/config.bone_dim*config.hidden_size), config.training_chain_length[4]).uniform_(-0.04, 0.04))
+        self.bias_out_arm2 = torch.nn.Parameter(torch.empty(config.training_chain_length[4]).uniform_(-0.04, 0.04))
+        # LSTM First layer
+        self.lstm.append(nn.LSTMCell(config.input_size, int(config.input_size / config.bone_dim * config.hidden_size)))
+        # Kinematics LSTM layer
+        spine = nn.LSTMCell(int(config.input_size / config.bone_dim * config.hidden_size), int(config.input_size / config.bone_dim * config.hidden_size))
+        self.lstm.append(spine)
+        arm = nn.LSTMCell(int(config.input_size / config.bone_dim * config.hidden_size), int(config.input_size / config.bone_dim * config.hidden_size))
+        self.lstm.append(arm)
+        self.lstm.append(arm)
+        leg = nn.LSTMCell(int(config.input_size / config.bone_dim * config.hidden_size), int(config.input_size / config.bone_dim * config.hidden_size))
+        self.lstm.append(leg)
+        self.lstm.append(leg)
+        self.lstm_layer = 6
+
+    def forward(self, hidden_states, cell_states, global_t_state, p, noise):
+
+        # define decoder hidden states and cell states
+        h = []
+        c_h = []
+        pre = torch.zeros([hidden_states.shape[0], self.seq_length_out, self.config.input_size], device=p.device)
+        for i in range(self.lstm_layer):
+            h.append(torch.zeros(hidden_states.shape[0], self.seq_length_out + 1, self.nbones * self.config.hidden_size,
+                              device=p.device))
+            c_h.append(torch.zeros_like(h[i]))
+            # feed init hidden states and cell states into h and c_h
+            if i == 0:
+                h_t = hidden_states
+            elif i == 1:
+                h_t = torch.cat((global_t_state.unsqueeze(1), hidden_states), dim=1)
+            if i < 2:
+                h[i][:, 0, :] = h_t.mean(dim=1)
+                c_h[i][:, 0, :] = torch.mean(cell_states, dim=1)
+
+        for frame in range(self.seq_length_out):
+            for i in range(self.lstm_layer):
+                cell = self.lstm[i]
+                if i == 0:
+                    if frame == 0:
+                        input = p[:, 0, :]
+                        input_first = p[:, 0, :]
+                    else:
+                        input = pre[:, frame - 1, :].clone()
+                        input_first = pre[:, frame - 1, :].clone()
+                else:
+                    if i == (3 or 4 or 5):
+                        input = h[1][:, frame + 1, :].clone()
+                    else:
+                        input = h[i-1][:, frame + 1, :].clone()
+                h[i][:, frame + 1, :], c_h[i][:, frame + 1, :] \
+                    = cell(input, (h[i][:, frame, :].clone(), c_h[i][:, frame, :].clone()))
+
+                if i == 1:
+                    pre[:, frame, self.config.index[2]] = torch.matmul(h[i][:, frame + 1, :].clone(), self.weights_out_spine) + \
+                                   self.bias_out_spine + input_first[:, self.config.index[2]]
+                elif i == 2:
+                    pre[:, frame, self.config.index[0]] = torch.matmul(h[i][:, frame + 1, :].clone(), self.weights_out_leg1) + \
+                                   self.bias_out_leg1 + input_first[:, self.config.index[0]]
+                elif i == 3:
+                    pre[:, frame, self.config.index[1]] = torch.matmul(h[i][:, frame + 1, :].clone(), self.weights_out_leg2) + \
+                                   self.bias_out_leg2 + input_first[:, self.config.index[1]]
+                elif i == 4:
+                    pre[:, frame, self.config.index[3]] = torch.matmul(h[i][:, frame + 1, :].clone(), self.weights_out_arm1) + \
+                                   self.bias_out_arm1 + input_first[:, self.config.index[3]]
+                elif i == 5:
+                    pre[:, frame, self.config.index[4]] = torch.matmul(h[i][:, frame + 1, :].clone(), self.weights_out_arm2) + \
+                                   self.bias_out_arm2 + input_first[:, self.config.index[4]]
+
+        return pre
+
 
 class LSTM_decoder(nn.Module):
 
@@ -472,5 +565,4 @@ class LSTM_decoder(nn.Module):
             for i in range(self.seq_length_out):
                 noise = torch.matmul(noise, self.Noise)
                 pre[:, i, :] = 0.8 * pre[:, i, :].clone() + 0.2 * noise
-        pre_c = c_h[-1][:, 1:, :]
-        return pre, pre_c
+        return pre

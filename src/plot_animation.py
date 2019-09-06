@@ -68,7 +68,7 @@ class plot_h36m(object):
         ydata_f = np.squeeze(self.joint_xyz_f[frame, :, 1])
         zdata_f = np.squeeze(self.joint_xyz_f[frame, :, 2])
 
-        for i in range(len(self.chain)):
+        for i in range(3):#len(self.chain)):
             self.lns.append(self.ax.plot3D(xdata_f[self.chain[i][:],], ydata_f[self.chain[i][:],], zdata_f[self.chain[i][:],], linewidth=2.0, color='#f94e3e')) # red: prediction
             self.lns.append(self.ax.plot3D(xdata[self.chain[i][:],], ydata[self.chain[i][:],], zdata[self.chain[i][:],], linewidth=2.0, color='#0780ea')) # blue: ground truth
 

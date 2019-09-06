@@ -202,11 +202,12 @@ def prediction(config, checkpoint_filename):
                 filename = act + '_' + str(i)
                 if config.visualize:
                     # 蓝色是我的
+                    pass
                     pre_plot = plot_animation(y_t_xyz, y_p_xyz, config, filename)
                     pre_plot.plot()
 
 if __name__ == '__main__':
 
     config = config.TrainConfig('Human', 'lie', 'all')
-    prediction(config, './model/ST_HMREpoch_18 Error0.7721.pth')
+    prediction(config, './model/ST_HMREpoch_18 Error0.7721.pth')#HumanKpoch_13 Error0.7691.pth')#
     #train(config)

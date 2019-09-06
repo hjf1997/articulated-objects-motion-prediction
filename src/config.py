@@ -36,7 +36,7 @@ class TrainConfig(object):
     models_name = ['ERD', 'LSTM3lr', 'GRU', 'HMR', 'ST_HMR']
     model = models_name[4]
 
-    decoder_name = ['lstm', 'st_lstm']
+    decoder_name = ['lstm', 'st_lstm', 'Kinematics_lstm']
     decoder = decoder_name[0]
 
     loss_name = ['l2', 'lie']
@@ -64,8 +64,14 @@ class TrainConfig(object):
             self.filename = 'default'
             self.chain_config = [np.arange(0, 5)]
         elif self.dataset == 'Human':
-            self.chain_config = [np.array([0, 1, 2, 3, 4, 5]),
-                                 np.array([0, 6, 7, 8, 9, 10]),
-                                 np.array([0, 12, 13, 14, 15]),
-                                 np.array([13, 17, 18, 19, 22, 19, 21]),
-                                 np.array([13, 25, 26, 27, 30, 27, 29])]
+            self.chain_config = [np.array([0, 1, 2, 3, 4, 5]),  # leg
+                                 np.array([0, 6, 7, 8, 9, 10]),  # leg
+                                 np.array([0, 12, 13, 14, 15]),  # spine
+                                 np.array([13, 17, 18, 19, 22, 19, 21]),  # arm
+                                 np.array([13, 25, 26, 27, 30, 27, 29])]  # arm
+            self.training_chain_length = [8, 8, 18, 10, 10]
+            self.index = [[6, 7, 8, 9, 10, 11, 12, 13],
+                          [14, 15, 16, 17, 18, 19, 20, 21],
+                          [0, 1, 2, 3, 4, 5, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33],
+                          [34, 35, 36, 37, 38, 39, 40, 41, 42, 43],
+                          [44, 45, 46, 47, 48, 49, 50, 51, 52, 53]]
