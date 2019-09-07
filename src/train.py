@@ -18,6 +18,7 @@ from ERD import ERD
 from GRU import GRU
 from LSTM3lr import LSTM3lr
 
+
 def choose_net(config):
 
     if config.model is 'ST_HMR':
@@ -189,7 +190,6 @@ def prediction(config, checkpoint_dir):
     net.load_state_dict(torch.load(checkpoint_dir + dir[-1], map_location='cuda:0'))
     y_predict = {}
     with torch.no_grad():
-        # This loop runs only once.
         for act in actions:
             x_test_ = torch.from_numpy(x_test[act]).float().to(device)
             dec_in_test_ = torch.from_numpy(dec_in_test[act]).float().to(device)
@@ -229,4 +229,4 @@ if __name__ == '__main__':
     if config.train_model is True:
         train(config, checkpoint_dir)
     else:
-        prediction(config, checkpoint_dir)#'./model/ST_HMREpoch_18 Error0.7721.pth')#humanKEpoch_36 Error0.7589.pth
+        prediction(config, checkpoint_dir)

@@ -30,8 +30,6 @@ class HMR(nn.Module):
         c_h = F.dropout(c_h, p=self.config.keep_prob, training=train)
 
         hidden_states, cell_states, global_t_state = self.encoder_cell(h, c_h, train)
-        #decoder_p = torch.matmul(decoder_inputs, self.weights_in) + self.bias_in
-        #decoder_p = decoder_p.view([decoder_p.shape[0], decoder_p.shape[1], self.config.hidden_size])
         prediction, _ = self.decoder(hidden_states, cell_states, global_t_state, decoder_inputs)
         return prediction
 

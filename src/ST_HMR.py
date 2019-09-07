@@ -2,9 +2,6 @@
 # create time: 7/20/2019
 
 import torch
-import numpy as np
-import config
-import utils
 import torch.nn as nn
 import torch.nn.functional as F
 
