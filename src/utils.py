@@ -6,6 +6,32 @@ import numpy as np
 import copy
 import torch
 
+
+def create_directory(config):
+
+    """
+    Checkpoint directory
+    modified from https://github.com/BII-wushuang/Lie-Group-Motion-Prediction
+    :param config:
+    :return:
+    """
+    folder_dir = config.dataset + '/' + config.datatype + '_' + config.loss + 'loss_' + config.model
+    if config.model == 'HMR':
+        folder_dir += '_RecurrentSteps=' + str(config.encoder_recurrent_steps) + '_' + 'ContextWindow=' + str(
+            config.context_window) + '_' + 'hiddenSize=' + str(config.hidden_size)
+    if config.model == 'ST_HMR':
+        folder_dir += '_RecurrentSteps=' + str(config.encoder_recurrent_steps) + '_hiddenSize=' + str(config.hidden_size) \
+                      + '_decoder_name=' + str(config.decoder) + '_dropout=' + str(config.keep_prob)
+
+    folder_dir += '/' + config.filename + '/'
+    folder_dir += 'inputWindow=' + str(config.input_window_size) + '_outputWindow=' + str(
+        config.output_window_size) + '/'
+
+    checkpoint_dir = './checkpoint/' + folder_dir
+    output_dir = './output/' + folder_dir
+
+    return [checkpoint_dir, output_dir]
+
 def expmap2rotmat(A):
     theta = np.linalg.norm(A)
     if theta == 0:

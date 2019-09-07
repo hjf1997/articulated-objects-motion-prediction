@@ -32,11 +32,14 @@ def choose_net(config):
         net = LSTM3lr(config)
     return net
 
-def train(config):
+
+def train(config, checkpoint_dir):
 
     print('Start Training the Model!')
 
     # generate data loader
+    if config.longterm is True:
+        config.output_window_size = 100
     choose = DatasetChooser(config)
     train_dataset, bone_length = choose(train=True)
     train_loader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True)
@@ -44,7 +47,6 @@ def train(config):
     test_loader = DataLoader(test_dataset, batch_size=config.batch_size, shuffle=True)
     prediction_dataset, bone_length = choose(prediction=True)
     x_test, y_test, dec_in_test = prediction_dataset
-    print()
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print('Device {} will be used to save parameters'.format(device))
@@ -62,7 +64,6 @@ def train(config):
     optimizer = optim.Adam(net.parameters(), lr=config.learning_rate)
 
     # Save model
-    checkpoint_dir = './model/'
     if not (os.path.exists(checkpoint_dir)):
         os.makedirs(checkpoint_dir)
 
@@ -132,19 +133,19 @@ def train(config):
         error_actions = 0.0
         for act in actions:
             if config.datatype == 'lie':
-                mean_error, _ = utils.mean_euler_error(config, act, y_predict[act], y_test[act][:, :10, :])
+                mean_error, _ = utils.mean_euler_error(config, act, y_predict[act], y_test[act][:, :config.output_window_size, :])
                 error = mean_error[[1, 3, 7, 9]]
             error_actions += error.mean()
         error_actions /= len(actions)
         if error_actions < best_error:
             best_error_list = error
             best_error = error_actions
-            torch.save(net.state_dict(),'./model/ERDEpoch_' + str(epoch + 1) + ' Error' + str(round(best_error, 4)) + '.pth')
+            torch.save(net.state_dict(), checkpoint_dir + 'Epoch_' + str(epoch + 1) + '.pth')
         print('Current best:' + str(round(best_error_list[0], 2))+ ' ' + str(round(best_error_list[1], 2)) +
                                     ' ' + str(round(best_error_list[2], 2)) + ' ' + str(round(best_error_list[3], 2)))
 
 
-def prediction(config, checkpoint_filename):
+def prediction(config, checkpoint_dir):
 
     # Start testing model!
 
@@ -152,12 +153,26 @@ def prediction(config, checkpoint_filename):
     config.output_window_size = 75
     choose = DatasetChooser(config)
     if config.dataset is 'Human':
-        _, _ = choose(train=True) # get mean value etc for unnorm
+        _, _ = choose(train=True)  # get mean value etc for unnorm
 
-    prediction_dataset, bone_length = choose(prediction=True)
-    x_test, y_test, dec_in_test = prediction_dataset
+    if config.longterm is False:
+        prediction_dataset, bone_length = choose(prediction=True)
+        x_test, y_test, dec_in_test = prediction_dataset
+        actions = list(x_test.keys())
+    else:
+        # get raw validation data because test data isn't usable
+        train_dataset, bone_length = choose(train=False)
+        test_set = train_dataset.data
+        x_test = {}
+        y_test = {}
+        dec_in_test = {}
+        test_set = test_set[0]
+        x_test[config.filename] = np.reshape(test_set[:config.input_window_size-1,:], [1, -1, config.input_size])
+        y_test[config.filename] = np.reshape(test_set[config.input_window_size:, :], [1, -1, config.input_size])
+        dec_in_test[config.filename] = np.reshape(test_set[config.input_window_size-1:-1, :], [1, -1, config.input_size])
+        config.output_window_size = y_test[config.filename].shape[1]
+        actions = [config.filename]
 
-    actions = list(x_test.keys())
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print('Device {} will be used to save parameters'.format(device))
     torch.cuda.manual_seed(973)
@@ -170,7 +185,8 @@ def prediction(config, checkpoint_filename):
     #if torch.cuda.device_count() > 1:
     #    print("Let's use {} GPUs!".format(str(torch.cuda.device_count())))
     net = torch.nn.DataParallel(net)
-    net.load_state_dict(torch.load(checkpoint_filename, map_location='cuda:0'))
+    dir = os.listdir(checkpoint_dir)
+    net.load_state_dict(torch.load(checkpoint_dir + dir[-1], map_location='cuda:0'))
     y_predict = {}
     with torch.no_grad():
         # This loop runs only once.
@@ -202,12 +218,15 @@ def prediction(config, checkpoint_filename):
                 filename = act + '_' + str(i)
                 if config.visualize:
                     # 蓝色是我的
-                    pass
                     pre_plot = plot_animation(y_t_xyz, y_p_xyz, config, filename)
                     pre_plot.plot()
+
 
 if __name__ == '__main__':
 
     config = config.TrainConfig('Human', 'lie', 'all')
-    prediction(config, './model/ST_HMREpoch_18 Error0.7721.pth')#HumanKpoch_13 Error0.7691.pth')#
-    #train(config)
+    checkpoint_dir, output_dir = utils.create_directory(config)
+    if config.train_model is True:
+        train(config, checkpoint_dir)
+    else:
+        prediction(config, checkpoint_dir)#'./model/ST_HMREpoch_18 Error0.7721.pth')#humanKEpoch_36 Error0.7589.pth

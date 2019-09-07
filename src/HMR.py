@@ -297,7 +297,7 @@ class LSTM_decoder(nn.Module):
             elif i == 1:
                 h_t = torch.cat((global_t_state, hidden_states), dim=1)  # 这个是Hg
             else:
-                print('The max decoder num is 2!')
+                raise Exception('The max decoder_recurrent_steps is 2!')
 
             h[i][:, 0, :] = h_t.mean(dim=1)
             c_h[i][:, 0, :] = torch.mean(cell_states, dim=1)

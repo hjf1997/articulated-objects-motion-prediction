@@ -64,9 +64,8 @@ class ST_HMR(nn.Module):
         c_g_s = torch.mean(c_h, 1, keepdim=True).expand_as(c_h)
 
         for rec in range(self.config.encoder_recurrent_steps):
-            hidden_states, cell_states, global_t_state, g_t, c_g_t, g_s, c_g_s, noise = self.encoder_cell[rec](h, c_h, p, g_t, c_g_t, g_s, c_g_s, train)
-        #print(hidden_states[:, 0, :, :].abs().mean())
-        prediction = self.decoder(hidden_states, cell_states, global_t_state, decoder_inputs, noise)
+            hidden_states, cell_states, global_t_state, g_t, c_g_t, g_s, c_g_s = self.encoder_cell[rec](h, c_h, p, g_t, c_g_t, g_s, c_g_s, train)
+        prediction = self.decoder(hidden_states, cell_states, global_t_state, decoder_inputs)
         return prediction
 
 
@@ -181,12 +180,6 @@ class EncoderCell(nn.Module):
         self.Zgso = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size, self.config.hidden_size))
         self.bgso = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, 1, self.config.hidden_size))
 
-        """Trust gates"""
-        if self.config.trust_gate:
-            print('Use trust gate')
-            self.Est = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, 6*self.config.hidden_size, self.config.hidden_size))
-            self.Grd = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size, self.config.hidden_size))
-
     def forward(self, h, c_h, p, g_t, c_g_t, g_s, c_g_s, train):
         """
         :param h: hidden states of [batch, input_window_size-1, nbones, hidden_size]
@@ -213,7 +206,6 @@ class EncoderCell(nn.Module):
         c_t_before = torch.cat((padding_t, c_h[:, :-1, :, :]), dim=1)
         c_t_after = torch.cat((c_h[:, 1:, :, :], padding_t), dim=1)
         # [batch, input_window_size-1, nbones, hidden_size*3]
-        c_t_before_after = torch.cat((c_t_before, c_h, c_t_after), dim=3)
 
         h_s_before = torch.cat((padding_s, h[:, :, :-1, :]), dim=2)
         c_s_before = torch.cat((padding_s, c_h[:, :, :-1, :]), dim=2)
@@ -247,21 +239,8 @@ class EncoderCell(nn.Module):
                          + torch.matmul(h_s_before, self.Wsc) + torch.matmul(g_t, self.Ztc)
                          + torch.matmul(g_s, self.Zsc) + self.bc)
 
-        # c_h = (f_lt_n * c_t_before) + (f_ft_n * c_h) + (f_rt_n * c_t_after) + (f_s_n * c_s_before)\
-        #                     + (f_gt_n * c_g_t) + (f_gs_n * c_g_s) + (c_n * i_n)
-        # Trust gate
-        noise = None
-        if self.config.trust_gate:
-            h_trust = torch.cat((h_t_before_after, h_s_before, g_t, g_s), dim=3)
-            p_est = torch.tanh(torch.matmul(h_trust, self.Est))
-            p_grd = torch.tanh(torch.matmul(p, self.Grd))
-            t = torch.exp(0.8 * (p_est - p_grd)**2)
-            c_h = (1 - t) * (f_lt_n * c_t_before) + (1 - t) * (f_ft_n * c_h) + (1 - t) * (f_rt_n * c_t_after) + (1 - t) * (f_s_n * c_s_before)\
-                                 + (1 - t) * (f_gt_n * c_g_t) + (1 - t) * (f_gs_n * c_g_s) + t * (c_n * i_n)
-            noise = (1 - t) * (c_n * i_n)
-        else:
-            c_h = (f_lt_n * c_t_before) + (f_ft_n * c_h) + (f_rt_n * c_t_after) + (f_s_n * c_s_before)\
-                            + (f_gt_n * c_g_t) + (f_gs_n * c_g_s) + (c_n * i_n)
+        c_h = (f_lt_n * c_t_before) + (f_ft_n * c_h) + (f_rt_n * c_t_after) + (f_s_n * c_s_before)\
+                        + (f_gt_n * c_g_t) + (f_gs_n * c_g_s) + (c_n * i_n)
 
         h = o_n * torch.tanh(c_h)
 
@@ -287,7 +266,8 @@ class EncoderCell(nn.Module):
         hidden_states = h.view([h.shape[0], h.shape[1], -1])
         cell_states = c_h.view([c_h.shape[0], c_h.shape[1], -1])
         global_t_state = g_t[:, 1, :, :].view([g_t.shape[0], -1])
-        return hidden_states, cell_states, global_t_state, g_t, c_g_t, g_s, c_g_s, noise
+
+        return hidden_states, cell_states, global_t_state, g_t, c_g_t, g_s, c_g_s
 
 
 class ST_LSTM(nn.Module):
@@ -302,7 +282,6 @@ class ST_LSTM(nn.Module):
         self.bias_out = torch.nn.Parameter(torch.empty(config.bone_dim).uniform_(-0.04, 0.04))
 
         for i in range(config.decoder_recurrent_steps):
-            print("Prepare decoder for rec {}".format(str(i+1)))
             cells = torch.nn.ModuleList()
             for bone in range(config.nbones):
                 if i == 0:
@@ -312,7 +291,6 @@ class ST_LSTM(nn.Module):
                 cells.append(cell)
             recurrent_cell_box.append(cells)
         self.recurrent_cell_box = recurrent_cell_box
-        print("Prepare decoder for finished")
 
     def forward(self, hidden_states, cell_states, global_t_state, global_s_state, p):
         """
@@ -412,6 +390,7 @@ class ST_LSTMCell(nn.Module):
 
         return h, c_h
 
+
 class Kinematics_LSTM_decoder(nn.Module):
 
     def __init__(self, config):
@@ -447,7 +426,7 @@ class Kinematics_LSTM_decoder(nn.Module):
         self.lstm.append(leg)
         self.lstm_layer = 6
 
-    def forward(self, hidden_states, cell_states, global_t_state, p, noise):
+    def forward(self, hidden_states, cell_states, global_t_state, p):
 
         # define decoder hidden states and cell states
         h = []
@@ -518,11 +497,8 @@ class LSTM_decoder(nn.Module):
                 self.lstm.append(nn.LSTMCell(config.input_size, int(config.input_size/config.bone_dim*config.hidden_size)))
             else:
                 self.lstm.append(nn.LSTMCell(int(config.input_size/config.bone_dim*config.hidden_size), int(config.input_size/config.bone_dim*config.hidden_size)))
-        if config.noise_gate:
-            self.Noise = torch.nn.Parameter(torch.empty(self.nbones * self.config.hidden_size,
-                                                        self.nbones * self.config.hidden_size).uniform_(-0.04, 0.04))
 
-    def forward(self, hidden_states, cell_states, global_t_state, p, noise):
+    def forward(self, hidden_states, cell_states, global_t_state, p):
 
         # define decoder hidden states and cell states
         h = []
@@ -538,8 +514,7 @@ class LSTM_decoder(nn.Module):
             elif i == 1:
                 h_t = torch.cat((global_t_state.unsqueeze(1), hidden_states), dim=1)
             else:
-                print('The max decoder num is 2!')
-
+                raise Exception('The max decoder_recurrent_steps is 2!')
             h[i][:, 0, :] = h_t.mean(dim=1)
             c_h[i][:, 0, :] = torch.mean(cell_states, dim=1)
 
@@ -559,10 +534,4 @@ class LSTM_decoder(nn.Module):
                     = cell(input, (h[i][:, frame, :].clone(), c_h[i][:, frame, :].clone()))
             pre[:, frame, :] = torch.matmul(h[-1][:, frame + 1, :].clone(), self.weights_out) + \
                            self.bias_out + input_first
-        if self.config.noise_gate:
-            noise = noise.view(noise.shape[0], noise.shape[1], -1)
-            noise = torch.mean(noise, dim=1)
-            for i in range(self.seq_length_out):
-                noise = torch.matmul(noise, self.Noise)
-                pre[:, i, :] = 0.8 * pre[:, i, :].clone() + 0.2 * noise
         return pre
