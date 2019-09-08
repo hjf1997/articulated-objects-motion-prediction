@@ -24,7 +24,6 @@ class TrainConfig(object):
     visualize = False
     train_model = False
 
-
     models_name = ['ERD', 'LSTM3lr', 'GRU', 'HMR', 'ST_HMR']
     model = models_name[4]
 
