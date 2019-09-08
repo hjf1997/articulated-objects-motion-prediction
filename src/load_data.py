@@ -11,11 +11,11 @@ class FormatDataPre(object):
     """
     Form prediction(test) data.
     """
+
     def __init__(self):
         pass
 
     def __call__(self, x_test, y_test):
-
         dec_in_test = x_test[-1:, :]
         x_test = x_test[:-1, :]
         return {'x_test': x_test, 'dec_in_test': dec_in_test, 'y_test': y_test}
@@ -25,6 +25,7 @@ class FormatData(object):
     """
     Form train/validation data.
     """
+
     def __init__(self, config):
         self.config = config
 
@@ -33,14 +34,14 @@ class FormatData(object):
         total_frames = self.config.input_window_size + self.config.output_window_size
 
         video_frames = sample.shape[0]
-        idx = np.random.randint(25, video_frames-total_frames)
+        idx = np.random.randint(2, video_frames - total_frames)
 
-        data_seq = sample[idx:idx+total_frames, :]
-        encoder_inputs = data_seq[:self.config.input_window_size-1, :]
+        data_seq = sample[idx:idx + total_frames, :]
+        encoder_inputs = data_seq[:self.config.input_window_size - 1, :]
         # 最后一个弃掉了,这里代码还可以精简
         if train:
-            decoder_inputs = data_seq[self.config.input_window_size-1:
-                                      self.config.input_window_size-1+self.config.output_window_size, :]
+            decoder_inputs = data_seq[self.config.input_window_size - 1:
+                                      self.config.input_window_size - 1 + self.config.output_window_size, :]
         else:
             decoder_inputs = data_seq[self.config.input_window_size - 1:self.config.input_window_size, :]
         decoder_outputs = data_seq[self.config.input_window_size:, :]
@@ -51,6 +52,7 @@ class LieTsfm(object):
     """
     This class is redundant and could be integrated into dataset class. However, we didn't do that due to some historical events.
     """
+
     def __init__(self, config):
         self.config = config
 
@@ -83,7 +85,7 @@ class HumanDataset(Dataset):
 
         if config.filename == 'all':
             actions = ['directions', 'discussion', 'eating', 'greeting', 'phoning', 'posing', 'purchases', 'sitting',
-                 'sittingdown', 'smoking', 'takingphoto', 'waiting', 'walking', 'walkingdog', 'walkingtogether']
+                       'sittingdown', 'smoking', 'takingphoto', 'waiting', 'walking', 'walkingdog', 'walkingtogether']
         else:
             actions = [config.filename]
 
@@ -93,11 +95,11 @@ class HumanDataset(Dataset):
             for action in actions:
                 for i in range(2):
                     if config.datatype == 'lie':
-                        filename = '{0}/{1}_{2}_{3}_lie.mat'.format(train_path, id, action, i+1)
+                        filename = '{0}/{1}_{2}_{3}_lie.mat'.format(train_path, id, action, i + 1)
                         rawdata = sio.loadmat(filename)['lie_parameters']
                         set.append(rawdata)
                     elif config.datatype == 'xyz':
-                        filename = '{0}/{1}_{2}_{3}_xyz.mat'.format(train_path, id, action, i+1)
+                        filename = '{0}/{1}_{2}_{3}_xyz.mat'.format(train_path, id, action, i + 1)
                         rawdata = sio.loadmat(filename)['joint_xyz']
                         set.append(rawdata.reshape(rawdata.shape[0], -1))
 
@@ -189,7 +191,7 @@ class MouseDataset(Dataset):
             train_path = './data/Mouse/Train/train_xyz/'
             tail = '_xyz.mat'
         if train:
-            subjects = ['S1',  'S3', 'S4']
+            subjects = ['S1', 'S3', 'S4']
         else:
             subjects = ['S2']
 
@@ -217,7 +219,7 @@ class MouseDataset(Dataset):
 
 class CSLDataset(Dataset):
 
-    def __init__(self,config,train=True):
+    def __init__(self, config, train=True):
         self.config = config
         self.train = train
         self.lie_tsfm = LieTsfm(config)
@@ -229,20 +231,20 @@ class CSLDataset(Dataset):
             train_path = './data/CSL/Train/train_xyz/'
             tail = '_xyz.mat'
         if train:
-            subjects=["P"+str(i+1) for i in range(9,49)]
+            subjects = ["P" + str(i + 1) for i in range(9, 49)]
             # 因为这些人被干掉了，动作不标准
             subjects.remove('P15')
             subjects.remove('P17')
             subjects.remove('P39')
             subjects.remove('P40')
         else:
-            subjects=["P01","P02","P03","P04","P05","P06","P07","P08","P09",'P50']
+            subjects = ["P01", "P02", "P03", "P04", "P05", "P06", "P07", "P08", "P09", 'P50']
 
         set = []
         # 这里应该还要遍历一个动作list的，测试就先不写了
         for id in subjects:
             for i in range(2):
-                filename = train_path + id + "_condition_"+(i+1) + tail
+                filename = train_path + id + "_condition_" + str(i + 1) + tail
                 rawdata = sio.loadmat(filename)
                 rawdata = rawdata[list(rawdata.keys())[3]]
                 set.append(rawdata)
@@ -256,7 +258,7 @@ class CSLDataset(Dataset):
         sample = self.formatdata(sample, False)
         return sample
 
-    def __len__(self) :
+    def __len__(self):
         return len(self.data)
 
 
@@ -313,8 +315,10 @@ class HumanPredictionDataset(object):
     def __init__(self, config):
         self.config = config
         if config.filename == 'all':
-            self.actions = ['directions', 'discussion', 'eating', 'greeting', 'phoning', 'posing', 'purchases', 'sitting',
-                       'sittingdown', 'smoking', 'takingphoto', 'waiting', 'walking', 'walkingdog', 'walkingtogether']
+            self.actions = ['directions', 'discussion', 'eating', 'greeting', 'phoning', 'posing', 'purchases',
+                            'sitting',
+                            'sittingdown', 'smoking', 'takingphoto', 'waiting', 'walking', 'walkingdog',
+                            'walkingtogether']
         else:
             self.actions = [config.filename]
 
@@ -331,8 +335,10 @@ class HumanPredictionDataset(object):
                         test_set[(subj, action, subact)] = sio.loadmat(filename)['joint_xyz']
                         test_set[(subj, action, subact)] = test_set[(subj, action, subact)].reshape(
                             test_set[(subj, action, subact)].shape[0], -1)
-        try: config.data_mean
-        except NameError: print('Load  train set first!')
+        try:
+            config.data_mean
+        except NameError:
+            print('Load  train set first!')
         self.test_set = utils.normalize_data_dir(test_set, config.data_mean, config.data_std, config.dim_to_use)
 
     def get_data(self):
@@ -340,7 +346,8 @@ class HumanPredictionDataset(object):
         y_test = {}
         dec_in_test = {}
         for action in self.actions:
-            encoder_inputs, decoder_inputs, decoder_outputs = self.get_batch_srnn(self.config, self.test_set, action, self.config.output_window_size)
+            encoder_inputs, decoder_inputs, decoder_outputs = self.get_batch_srnn(self.config, self.test_set, action,
+                                                                                  self.config.output_window_size)
             x_test[action] = encoder_inputs
             y_test[action] = decoder_outputs
             dec_in_test[action] = np.zeros([decoder_inputs.shape[0], 1, decoder_inputs.shape[2]])
@@ -408,6 +415,7 @@ class HumanPredictionDataset(object):
 
         return idx
 
+
 # The class below is discarded, just use human class to load h3.6m dataset instead
 class H36mDataset(Dataset):
     """
@@ -426,7 +434,7 @@ class H36mDataset(Dataset):
 
         if config.filename == 'all':
             actions = ['directions', 'discussion', 'eating', 'greeting', 'phoning', 'posing', 'purchases', 'sitting',
-                 'sittingdown', 'smoking', 'takingphoto', 'waiting', 'walking', 'walkingdog', 'walkingtogether']
+                       'sittingdown', 'smoking', 'takingphoto', 'waiting', 'walking', 'walkingdog', 'walkingtogether']
         else:
             actions = [config.filename]
 

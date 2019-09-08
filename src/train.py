@@ -46,8 +46,8 @@ def train(config, checkpoint_dir):
     train_loader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True)
     test_dataset, _ = choose(train=False)
     test_loader = DataLoader(test_dataset, batch_size=config.batch_size, shuffle=True)
-    prediction_dataset, bone_length = choose(prediction=True)
-    x_test, y_test, dec_in_test = prediction_dataset
+    #prediction_dataset, bone_length = choose(prediction=True)
+    #x_test, y_test, dec_in_test = prediction_dataset
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print('Device {} will be used to save parameters'.format(device))
@@ -229,7 +229,7 @@ def prediction(config, checkpoint_dir):
 
 if __name__ == '__main__':
 
-    config = config.TrainConfig('Human', 'lie', 'all')
+    config = config.TrainConfig('CSL', 'lie', 'all')
     checkpoint_dir, output_dir = utils.create_directory(config)
     if config.train_model is True:
         train(config, checkpoint_dir)
