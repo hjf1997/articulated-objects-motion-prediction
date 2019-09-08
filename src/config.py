@@ -9,7 +9,7 @@ class TrainConfig(object):
     """Training Configurations"""
     input_window_size = 50  # Input window size during training
     output_window_size = 10  # Output window size during training
-    hidden_size = 16  # Number of hidden units for HMR
+    hidden_size = 22  # Number of hidden units for HMR
     batch_size = 32  # Batch size for training
     learning_rate = 0.001  # Learning rate
     max_epoch = 500  # Maximum training epochs
@@ -22,7 +22,7 @@ class TrainConfig(object):
     encoder_recurrent_steps = 10  # Number of recurrent steps in HMR/ST_HMR
     decoder_recurrent_steps = 2  # Number of recurrent steps in ST-HMR decoder expect kinematics LSTM
     visualize = False
-    train_model = True
+    train_model = False
 
 
     models_name = ['ERD', 'LSTM3lr', 'GRU', 'HMR', 'ST_HMR']
@@ -34,7 +34,7 @@ class TrainConfig(object):
     share_encoder_weights = True  # share encoder weight at each recurrent step, this param only applies to ST_HMR
     bone_dim = 3  # dimension of one bone representation, static in all datasets
     decoder_name = ['lstm', 'st_lstm', 'Kinematics_lstm']
-    decoder = decoder_name[2]
+    decoder = decoder_name[0]
 
     def __init__(self, dataset, datatype, action):
         self.dataset = dataset
