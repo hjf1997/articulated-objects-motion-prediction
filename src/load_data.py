@@ -490,6 +490,7 @@ class HumanPredictionDataset(object):
         return [encoder_inputs, decoder_inputs, decoder_outputs]
 
     def find_indices_srnn(self, data, action):
+
         """
         Obtain the same action indices as in SRNN using a fixed random seed
         See https://github.com/asheshjain399/RNNexp/blob/master/structural_rnn/CRFProblems/H3.6m/processdata.py

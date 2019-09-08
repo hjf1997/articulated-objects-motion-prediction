@@ -3,7 +3,6 @@
 # create time 7/20/2019
 
 import numpy as np
-import torch
 
 
 class TrainConfig(object):
@@ -11,33 +10,31 @@ class TrainConfig(object):
     """Training Configurations"""
     input_window_size = 50                      # Input window size during training
     output_window_size = 10                     # Output window size during training
-    hidden_size = 22                      # Number of hidden units for HMR
+    hidden_size = 20                      # Number of hidden units for HMR
     batch_size = 32                               # Batch size for training
     learning_rate = 0.001                       # Learning rate
     max_epoch = 500                              # Maximum training epochs
     training_size = 20                     # Training iterations per epoch
     validation_size = 20                       # Validation iterations per epoch
-    share_encoder_weights = True      # share encoder weight at each recurrent step, this param only applies to ST_HMR
     restore = False                             # Restore the trained weights or restart training from scratch
     longterm = False                            # Whether we are doing super longterm prediction
     keep_prob = 0.9                              # Keep probability for RNN cell weights
     context_window = 1                          # Context window size in HMR, this para only applies to HMR
     encoder_recurrent_steps = 10              # Number of recurrent steps in HMR/ST_HMR
     decoder_recurrent_steps = 2            # Number of recurrent steps in ST-HMR decoder expect kinematics LSTM
-    bone_dim = 3                                  # dimension of one bone representation, static in all datasets
-    longterm = False                               # longterm prediction
-    visualize = True
+    visualize = False
     train_model = False
 
     models_name = ['ERD', 'LSTM3lr', 'GRU', 'HMR', 'ST_HMR']
     model = models_name[4]
 
-    # The param below only applies to ST-HMR's decoder
-    decoder_name = ['lstm', 'st_lstm', 'Kinematics_lstm']
-    decoder = decoder_name[0]
-
     loss_name = ['l2', 'lie']
     loss = loss_name[1]
+    """Only suitable for ST_HMR"""
+    share_encoder_weights = True      # share encoder weight at each recurrent step, this param only applies to ST_HMR
+    bone_dim = 3                                  # dimension of one bone representation, static in all datasets
+    decoder_name = ['lstm', 'st_lstm', 'Kinematics_lstm']
+    decoder = decoder_name[2]
 
     def __init__(self, dataset, datatype, action):
         self.dataset = dataset
@@ -51,7 +48,7 @@ class TrainConfig(object):
         elif dataset == 'Human':
             self.nbones = 18
 
-        """Define kinematic chain configurations based on dataset class"""
+        """Define kinematic chain configurations based on dataset class. Don't modify the code below"""
         if self.dataset == 'Fish':
             self.filename = 'default'
             self.chain_config = [np.arange(0, 21)]
