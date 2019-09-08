@@ -6,24 +6,24 @@ import numpy as np
 
 
 class TrainConfig(object):
-
     """Training Configurations"""
-    input_window_size = 50                      # Input window size during training
-    output_window_size = 10                     # Output window size during training
-    hidden_size = 20                      # Number of hidden units for HMR
-    batch_size = 32                               # Batch size for training
-    learning_rate = 0.001                       # Learning rate
-    max_epoch = 500                              # Maximum training epochs
-    training_size = 20                     # Training iterations per epoch
-    validation_size = 20                       # Validation iterations per epoch
-    restore = False                             # Restore the trained weights or restart training from scratch
-    longterm = False                            # Whether we are doing super longterm prediction
-    keep_prob = 0.9                              # Keep probability for RNN cell weights
-    context_window = 1                          # Context window size in HMR, this para only applies to HMR
-    encoder_recurrent_steps = 10              # Number of recurrent steps in HMR/ST_HMR
-    decoder_recurrent_steps = 2            # Number of recurrent steps in ST-HMR decoder expect kinematics LSTM
+    input_window_size = 50  # Input window size during training
+    output_window_size = 10  # Output window size during training
+    hidden_size = 16  # Number of hidden units for HMR
+    batch_size = 32  # Batch size for training
+    learning_rate = 0.001  # Learning rate
+    max_epoch = 500  # Maximum training epochs
+    training_size = 20  # Training iterations per epoch
+    validation_size = 20  # Validation iterations per epoch
+    restore = False  # Restore the trained weights or restart training from scratch
+    longterm = False  # Whether we are doing super longterm prediction
+    keep_prob = 0.9  # Keep probability for RNN cell weights
+    context_window = 1  # Context window size in HMR, this para only applies to HMR
+    encoder_recurrent_steps = 10  # Number of recurrent steps in HMR/ST_HMR
+    decoder_recurrent_steps = 2  # Number of recurrent steps in ST-HMR decoder expect kinematics LSTM
     visualize = False
-    train_model = False
+    train_model = True
+
 
     models_name = ['ERD', 'LSTM3lr', 'GRU', 'HMR', 'ST_HMR']
     model = models_name[4]
@@ -31,8 +31,8 @@ class TrainConfig(object):
     loss_name = ['l2', 'lie']
     loss = loss_name[1]
     """Only suitable for ST_HMR"""
-    share_encoder_weights = True      # share encoder weight at each recurrent step, this param only applies to ST_HMR
-    bone_dim = 3                                  # dimension of one bone representation, static in all datasets
+    share_encoder_weights = True  # share encoder weight at each recurrent step, this param only applies to ST_HMR
+    bone_dim = 3  # dimension of one bone representation, static in all datasets
     decoder_name = ['lstm', 'st_lstm', 'Kinematics_lstm']
     decoder = decoder_name[2]
 
@@ -47,6 +47,9 @@ class TrainConfig(object):
             self.nbones = 20
         elif dataset == 'Human':
             self.nbones = 18
+        elif dataset == 'CSL':
+            self.nbones = 21
+
 
         """Define kinematic chain configurations based on dataset class. Don't modify the code below"""
         if self.dataset == 'Fish':
@@ -67,3 +70,16 @@ class TrainConfig(object):
                           [0, 1, 2, 3, 4, 5, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33],
                           [34, 35, 36, 37, 38, 39, 40, 41, 42, 43],
                           [44, 45, 46, 47, 48, 49, 50, 51, 52, 53]]
+
+        elif self.dataset == 'CSL':
+            self.chain_config = [np.array([0, 1]),  # leg
+                                 np.array([2, 3]),  # leg
+                                 np.array([4, 5, 6, 7, 8]),  # spine
+                                 np.array([9, 10, 11, 12, 13, 14]),  # arm
+                                 np.array([15, 16, 17, 18, 19, 20])]  # arm
+            self.training_chain_length = [6, 6, 15, 18, 18]
+            self.index = [[0, 1, 2, 3, 4, 5],
+                          [6, 7, 8, 9, 10, 11],
+                          [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26],
+                          [27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44],
+                          [45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62]]
