@@ -26,7 +26,14 @@ def l2_loss(prediction, y):
 
 
 def linearizedlie_loss(prediction, y, bone, config):
-
+    """
+    Lie loss
+    :param prediction:
+    :param y:
+    :param bone:
+    :param config:
+    :return:
+    """
     if config.dataset is not 'Human':
         chainlength = bone.shape[0] - 1
         weights = torch.zeros(chainlength * 3, device=prediction.device)
