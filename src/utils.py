@@ -10,7 +10,7 @@ import torch
 def create_directory(config):
 
     """
-    Checkpoint directory
+    crate Checkpoint directory path
     modified from https://github.com/BII-wushuang/Lie-Group-Motion-Prediction
     :param config:
     :return:

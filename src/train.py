@@ -58,7 +58,7 @@ def train(config, checkpoint_dir):
     print('Encoder param number:' + str(sum(p.numel() for p in net.encoder_cell.parameters())))
     print('Decoder param number:' + str(sum(p.numel() for p in net.decoder.parameters())))
     if torch.cuda.device_count() > 1:
-        print("Let's use {} GPUs!".format(str(torch.cuda.device_count())))
+        print("{} GPUs are usable!".format(str(torch.cuda.device_count())))
     net = torch.nn.DataParallel(net)#, device_ids=[1, 2, 3]) # device_ids=[1, 2, 3]
     #net.load_state_dict(torch.load('./model/Epoch_84 Error0.8422.pth', map_location='cuda:0'))
 
@@ -148,20 +148,25 @@ def train(config, checkpoint_dir):
 
 def prediction(config, checkpoint_dir):
 
-    # Start testing model!
+    print('Start testing the Model!')
 
     # generate data loader
-    config.output_window_size = 75
+    if config.dataset == 'Mouse':
+        config.output_window_size = 75
+    elif config.dataset == 'Fish':
+        config.output_window_size = 100
+
     choose = DatasetChooser(config)
     if config.dataset is 'Human':
-        _, _ = choose(train=True)  # get mean value etc for unnorm
+        # This step is to get mean value, etc for unnorm
+        _, _ = choose(train=True)
 
     if config.longterm is False:
         prediction_dataset, bone_length = choose(prediction=True)
         x_test, y_test, dec_in_test = prediction_dataset
         actions = list(x_test.keys())
     else:
-        # get raw validation data because test data isn't usable
+        # get raw validation data because the test data isn't usable
         train_dataset, bone_length = choose(train=False)
         test_set = train_dataset.data
         x_test = {}
