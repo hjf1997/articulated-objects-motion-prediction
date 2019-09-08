@@ -57,6 +57,7 @@ class LieTsfm(object):
 
 class H36mDataset(Dataset):
     """
+    discarded
     This dataset only contains lie algebra data
     Part of the code is copied from: https://github.com/BII-wushuang/Lie-Group-Motion-Prediction
     """
@@ -442,8 +443,8 @@ class HumanPredictionDataset(object):
                         test_set[(subj, action, subact)] = sio.loadmat(filename)['joint_xyz']
                         test_set[(subj, action, subact)] = test_set[(subj, action, subact)].reshape(
                             test_set[(subj, action, subact)].shape[0], -1)
-        if config.data_mean is None:
-            print('Load  train set first!')
+        try: config.data_mean
+        except NameError: print('Load  train set first!')
         self.test_set = utils.normalize_data_dir(test_set, config.data_mean, config.data_std, config.dim_to_use)
 
     def get_data(self):

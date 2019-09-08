@@ -42,7 +42,7 @@ class ST_HMR(nn.Module):
         :param encoder_inputs:
         :param decoder_inputs:
         :param train: train or test the model
-        :return: the prediction of human motion
+        :return:  predictions of human motion
         """
 
         # [batch, config.input_window_size-1, input_size/bone_dim*hidden_size]
@@ -192,12 +192,14 @@ class EncoderCell(nn.Module):
         :param h: hidden states of [batch, input_window_size-1, nbones, hidden_size]
         :param c_h: cell states of  [batch, input_window_size-1, nbones, hidden_size]
         :param p: pose of  [batch, input_window_size-1, nbones, hidden_size]
-        :param g_t:
-        :param c_g_t:
-        :param g_s:
-        :param c_g_s:
-        :param train:
-        :return:
+        :param g_t: [batch, input_window_size-1, nbones, hidden_size]
+        :param c_g_t: [batch, input_window_size-1, nbones, hidden_size]
+        :param g_s: [batch, input_window_size-1, nbones, hidden_size]
+        :param c_g_s: [batch, input_window_size-1, nbones, hidden_size]
+        :param train: control dropout
+        :return: hidden_states, cell_states, global_t_state, g_t, c_g_t, g_s, c_g_s
+        hidden_states, cell_states, global_t_state at last encoding recurrent will be used in decoder.
+        g_t, c_g_t, g_s, c_g_s will be used for next recurrent
         """
 
         padding_t = torch.zeros_like(h[:, 0:1, :, :])
@@ -282,7 +284,7 @@ class Kinematics_LSTM_decoder(nn.Module):
     def __init__(self, config):
         """
         This decoder only apply to h3.6m dataset.
-        :param config:
+        :param config: global config class
         """
         super().__init__()
         self.config = config
@@ -313,6 +315,14 @@ class Kinematics_LSTM_decoder(nn.Module):
         self.lstm_layer = 6
 
     def forward(self, hidden_states, cell_states, global_t_state, p):
+        """
+        decoder forward
+        :param hidden_states: hideen states [batch, input_window_size-1, nbones * hidden_size]
+        :param cell_states: hideen states [batch, input_window_size-1, nbones * hidden_size]
+        :param global_t_state: [batch, nbones * hidden_size]
+        :param p: [batch, 1, nbones * hidden_size] 1 remains the dimension of hidden states
+        :return: predictions of human motion
+        """
 
         # define decoder hidden states and cell states
         h = []
@@ -385,6 +395,14 @@ class LSTM_decoder(nn.Module):
                 self.lstm.append(nn.LSTMCell(int(config.input_size/config.bone_dim*config.hidden_size), int(config.input_size/config.bone_dim*config.hidden_size)))
 
     def forward(self, hidden_states, cell_states, global_t_state, p):
+        """
+        decoder forward
+        :param hidden_states: hideen states [batch, input_window_size-1, nbones * hidden_size]
+        :param cell_states: hideen states [batch, input_window_size-1, nbones * hidden_size]
+        :param global_t_state: [batch, nbones * hidden_size]
+        :param p: [batch, 1, nbones * hidden_size] 1 remains the dimension of hidden states
+        :return: predictions of human motion
+        """
 
         # define decoder hidden states and cell states
         h = []
