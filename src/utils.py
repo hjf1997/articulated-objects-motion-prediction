@@ -226,7 +226,13 @@ def forward_kinematics_h36m(angles):
     return xyz
 
 def prepare_loss(data, length, dim_to_ignore):
-
+    """
+    recover ignore dimension in data to calculate lie loss
+    :param data: prediction data
+    :param length: length of one single human pose. 99 for h3.6m dataset
+    :param dim_to_ignore: get from function normalization_stats
+    :return: recovered data
+    """
     origData = torch.zeros([data.shape[0], data.shape[1], length], device=data.device)
     dimensions_to_use = []
     for i in range(length):
