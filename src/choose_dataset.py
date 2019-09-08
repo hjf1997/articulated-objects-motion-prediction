@@ -29,9 +29,7 @@ class DatasetChooser(object):
                     data = loader.MouseDataset(self.config, train=train)
                     self.config.input_size = data[0]['encoder_inputs'].shape[1]
                 elif self.dataset == 'CSL':
-                    bone_length_path='./data/CSL/standard_bone.mat'
-                    data=loader.CSLDataset(self.config,train=train)
-                    self.config.input_size=data[0]['encoder_inputs'].shape[1]
+                    pass
             elif self.config.datatype == 'xyz':
                 if self.dataset == 'Human':
                     pass

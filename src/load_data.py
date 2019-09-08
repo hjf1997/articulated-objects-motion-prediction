@@ -217,47 +217,14 @@ class MouseDataset(Dataset):
 
 class CSLDataset(Dataset):
 
-    def __init__(self,config,train=True):
-        self.config = config
-        self.train = train
-        self.lie_tsfm = LieTsfm(config)
-        self.formatdata = FormatData(config)
-        if config.datatype == 'lie':
-            train_path = './data/CSL/Train/train_lie/'
-            tail = '_lie.mat'
-        elif config.datatype == 'xyz':
-            train_path = './data/CSL/Train/train_xyz/'
-            tail = '_xyz.mat'
-        if train:
-            subjects=["P"+str(i+1) for i in range(9,49)]
-            # 因为这些人被干掉了，动作不标准
-            subjects.remove('P15')
-            subjects.remove('P17')
-            subjects.remove('P39')
-            subjects.remove('P40')
-        else:
-            subjects=["P01","P02","P03","P04","P05","P06","P07","P08","P09",'P50']
+    def __init__(self):
+        pass
 
-        set = []
-        # 这里应该还要遍历一个动作list的，测试就先不写了
-        for id in subjects:
-            for i in range(2):
-                filename = train_path + id + "_condition_"+(i+1) + tail
-                rawdata = sio.loadmat(filename)
-                rawdata = rawdata[list(rawdata.keys())[3]]
-                set.append(rawdata)
-        self.data = set
-
-    def __getitem__(self, idx):
-        if self.config.datatype == 'lie':
-            sample = self.lie_tsfm(self.data[idx])
-        elif self.config.datatype == 'xyz':
-            pass
-        sample = self.formatdata(sample, False)
-        return sample
+    def __getitem__(self, index: int):
+        pass
 
     def __len__(self) :
-        return len(self.data)
+        pass
 
 
 class AnimalPredictionDataset(object):
