@@ -13,7 +13,7 @@ class TrainConfig(object):
     batch_size = 32  # Batch size for training
     learning_rate = 0.001  # Learning rate
     max_epoch = 500  # Maximum training epochs
-    training_size = 100  # Training iterations per epoch
+    training_size = 20  # Training iterations per epoch
     validation_size = 20  # Validation iterations per epoch
     restore = False  # Restore the trained weights or restart training from scratch
     longterm = False  # Whether we are doing super longterm prediction
@@ -22,7 +22,7 @@ class TrainConfig(object):
     encoder_recurrent_steps = 10  # Number of recurrent steps in HMR/ST_HMR
     decoder_recurrent_steps = 2  # Number of recurrent steps in ST-HMR decoder expect kinematics LSTM
     visualize = True
-    train_model = False
+    train_model = True
 
 
     models_name = ['ERD', 'LSTM3lr', 'GRU', 'HMR', 'ST_HMR']

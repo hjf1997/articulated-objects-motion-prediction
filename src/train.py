@@ -46,8 +46,8 @@ def train(config, checkpoint_dir):
     train_loader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True)
     test_dataset, _ = choose(train=False)
     test_loader = DataLoader(test_dataset, batch_size=config.batch_size, shuffle=True)
-    #prediction_dataset, bone_length = choose(prediction=True)
-    #x_test, y_test, dec_in_test = prediction_dataset
+    prediction_dataset, bone_length = choose(prediction=True)
+    x_test, y_test, dec_in_test = prediction_dataset
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print('Device {} will be used to save parameters'.format(device))
@@ -103,7 +103,7 @@ def train(config, checkpoint_dir):
                 optimizer.step()
             prog.update(it + 1, [("Training Loss", loss.item())])
 
-        # Test
+        # valid
         with torch.no_grad():
             for it in range(config.validation_size):
                 for j in range(1):
@@ -116,6 +116,7 @@ def train(config, checkpoint_dir):
                             encoder_inputs = torch.cat([data['encoder_inputs'].float().to(device), encoder_inputs], dim=0)
                             decoder_inputs = torch.cat([data['decoder_inputs'].float().to(device), decoder_inputs], dim=0)
                             decoder_outputs = torch.cat([data['decoder_outputs'].float().to(device), decoder_outputs], dim=0)
+
                 prediction = net(encoder_inputs, decoder_inputs, train=False)
                 loss = Loss(prediction, decoder_outputs, bone_length, config)
                 prog_valid.update(it+1, [("Testing Loss", loss.item())])
@@ -228,7 +229,7 @@ def prediction(config, checkpoint_dir):
 
 if __name__ == '__main__':
 
-    config = config.TrainConfig('Human', 'lie', 'all')
+    config = config.TrainConfig('CSL', 'lie', 'all')
     checkpoint_dir, output_dir = utils.create_directory(config)
     if config.train_model is True:
         train(config, checkpoint_dir)

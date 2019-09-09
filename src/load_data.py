@@ -584,7 +584,7 @@ class CSLPredictionDataset(object):
 
     def __init__(self, config):
         self.config = config
-        if config.datatyoe == 'lie':
+        if config.datatype == 'lie':
             x = []
             y = []
             set_name = 'CSL'
@@ -592,8 +592,8 @@ class CSLPredictionDataset(object):
                 , '26', '27', '28', '29', '30', '31', '32', '33', '34', '35', '36', '37', '38', '41', '42', '43', '44',
                          '45', '46', '47', '48', '49', '50']
             for i in range(len(personNum)):
-                x_filename = './data/' + set_name + '/Test/x_test_lie/P' + str(i) + '_condition_1' + '_lie.mat'
-                y_filename = './data/' + set_name + '/Test/y_test_lie/P' + str(i) + '_condition_1' + '_lie.mat'
+                x_filename = './data/' + set_name + '/Test/x_test_lie/P' + str(personNum[i]) + '_condition_1' + '_lie.mat'
+                y_filename = './data/' + set_name + '/Test/y_test_lie/P' + str(personNum[i]) + '_condition_1' + '_lie.mat'
 
                 x_rawdata = sio.loadmat(x_filename)
                 x_rawdata = x_rawdata[list(x_rawdata.keys())[3]]
@@ -601,10 +601,10 @@ class CSLPredictionDataset(object):
                 y_rawdata = sio.loadmat(y_filename)
                 y_rawdata = y_rawdata[list(y_rawdata.keys())[3]]
 
-                x_data = x_rawdata[:, :-1, :3].reshape(x_rawdata.shape[0], -1)
+                x_data = np.delete(x_rawdata[:, :, :3], [1, 3, 8, 14, 20], axis=1).reshape(x_rawdata.shape[0], -1)
                 x.append(x_data)
 
-                y_data = y_rawdata[:, :-1, :3].reshape(y_rawdata.shape[0], -1)
+                y_data = np.delete(y_rawdata[:, :, :3], [1, 3, 8, 14, 20], axis=1).reshape(y_rawdata.shape[0], -1)
                 y.append(y_data)
         elif config.datatype == 'xyz':
             pass
