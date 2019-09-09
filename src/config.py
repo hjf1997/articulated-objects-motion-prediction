@@ -13,7 +13,7 @@ class TrainConfig(object):
     batch_size = 32  # Batch size for training
     learning_rate = 0.001  # Learning rate
     max_epoch = 500  # Maximum training epochs
-    training_size = 20  # Training iterations per epoch
+    training_size = 10  # Training iterations per epoch
     validation_size = 20  # Validation iterations per epoch
     restore = False  # Restore the trained weights or restart training from scratch
     longterm = False  # Whether we are doing super longterm prediction
@@ -34,7 +34,7 @@ class TrainConfig(object):
     share_encoder_weights = True  # share encoder weight at each recurrent step, this param only applies to ST_HMR
     bone_dim = 3  # dimension of one bone representation, static in all datasets
     decoder_name = ['lstm', 'st_lstm', 'Kinematics_lstm']
-    decoder = decoder_name[2]
+    decoder = decoder_name[0]
 
     def __init__(self, dataset, datatype, action):
         self.dataset = dataset

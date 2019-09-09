@@ -94,7 +94,9 @@ def train(config, checkpoint_dir):
                 encoder_inputs = data['encoder_inputs'].float().to(device)
                 decoder_inputs = data['decoder_inputs'].float().to(device)
                 decoder_outputs = data['decoder_outputs'].float().to(device)
+                print(torch.mean(torch.abs(decoder_outputs)))
                 prediction = net(encoder_inputs, decoder_inputs, train=True)
+                print(torch.mean(torch.abs(prediction)))
 
                 loss = Loss(prediction, decoder_outputs, bone_length, config)
                 net.zero_grad()
