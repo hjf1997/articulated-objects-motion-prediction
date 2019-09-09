@@ -250,7 +250,7 @@ class CSLDataset(Dataset):
             subjects = ["P01", "P02", "P03", "P05", "P07",  'P50']
 
         set = []
-        # 这里应该还要遍历一个动作list的，测试就先不写了
+        # 这里应该还要遍历一个动作list的，测试就先不写
         for id in subjects:
             for i in range(2):
                 filename = train_path + id + "_condition_" + str(i + 1) + tail
