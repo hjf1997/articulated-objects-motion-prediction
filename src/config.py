@@ -13,7 +13,7 @@ class TrainConfig(object):
     batch_size = 32  # Batch size for training
     learning_rate = 0.001  # Learning rate
     max_epoch = 500  # Maximum training epochs
-    training_size = 20  # Training iterations per epoch
+    training_size = 100  # Training iterations per epoch
     validation_size = 20  # Validation iterations per epoch
     restore = False  # Restore the trained weights or restart training from scratch
     longterm = False  # Whether we are doing super longterm prediction
@@ -22,7 +22,7 @@ class TrainConfig(object):
     encoder_recurrent_steps = 10  # Number of recurrent steps in HMR/ST_HMR
     decoder_recurrent_steps = 2  # Number of recurrent steps in ST-HMR decoder expect kinematics LSTM
     visualize = False
-    train_model = False
+    train_model = True
 
 
     models_name = ['ERD', 'LSTM3lr', 'GRU', 'HMR', 'ST_HMR']
@@ -48,7 +48,7 @@ class TrainConfig(object):
         elif dataset == 'Human':
             self.nbones = 18
         elif dataset == 'CSL':
-            self.nbones = 21
+            self.nbones = 16
 
 
         """Define kinematic chain configurations based on dataset class. Don't modify the code below"""
@@ -77,9 +77,9 @@ class TrainConfig(object):
                                  np.array([4, 5, 6, 7, 8]),  # spine
                                  np.array([9, 10, 11, 12, 13, 14]),  # arm
                                  np.array([15, 16, 17, 18, 19, 20])]  # arm
-            self.training_chain_length = [6, 6, 15, 18, 18]
-            self.index = [[0, 1, 2, 3, 4, 5],
-                          [6, 7, 8, 9, 10, 11],
-                          [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26],
-                          [27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44],
-                          [45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62]]
+            self.training_chain_length = [3, 3, 12, 15, 15]
+            self.index = [[0, 1, 2],
+                          [3,4,5],
+                          [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
+                          [18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32],
+                          [33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47]]

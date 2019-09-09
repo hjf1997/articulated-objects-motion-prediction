@@ -119,6 +119,11 @@ class DatasetChooser(object):
         if self.config.datatype == 'lie':
             for i in range(njoints):
                 bone[i, 0] = round(rawdata[0, i, 3], 2)
+            # delete zero in bone, n joints mean n-1 bones
+            if self.config.dataset is not 'CSL':
+                bone = bone[1:, :]
+            elif self.config.dataset is 'CSL':
+                bone = np.delete(bone, [0, 2, 4, 9, 15], axis=0)
         elif self.config.datatype == 'xyz':
             for i in range(njoints):
                 bone[i, 0] = round(np.linalg.norm(rawdata[0, i, :] - rawdata[0, i - 1, :]), 2)

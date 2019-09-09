@@ -34,18 +34,13 @@ def linearizedlie_loss(prediction, y, bone, config):
     :param config:
     :return:
     """
-    if config.dataset is not 'Human':
-        chainlength = bone.shape[0] - 1
-        weights = torch.zeros(chainlength * 3, device=prediction.device)
-        for j in range(chainlength):
-            for i in range(j, chainlength):
-                weights[j*3:j*3+3] = weights[j*3] + (chainlength - i) * bone[i + 1][0]
-    else:
-        chainlength = bone.shape[0]
-        weights = torch.zeros(chainlength * 3, device=prediction.device)
-        for j in range(chainlength):
-            for i in range(j, chainlength):
-                weights[j*3:j*3+3] = weights[j*3] + (chainlength - i) * bone[i][0]
+
+    chainlength = bone.shape[0]
+    weights = torch.zeros(chainlength * 3, device=prediction.device)
+    for j in range(chainlength):
+        for i in range(j, chainlength):
+            weights[j*3:j*3+3] = weights[j*3] + (chainlength - i) * bone[i][0]
+
     weights = weights / weights.max()
     loss = torch.sub(y, prediction) ** 2
     loss = torch.mean(loss, dim=[0, 1])

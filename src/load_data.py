@@ -166,7 +166,9 @@ class FishDataset(Dataset):
     def __getitem__(self, idx):
 
         if self.config.datatype == 'lie':
-            sample = self.lie_tsfm(self.data[idx])
+            sample = self.data[idx][:, :-1, :3].reshape(self.data[idx].shape[0], -1)
+
+            #sample = self.lie_tsfm(self.data[idx])
         elif self.config.datatype == 'xyz':
             pass
         sample = self.formatdata(sample, False)
@@ -206,7 +208,9 @@ class MouseDataset(Dataset):
     def __getitem__(self, idx):
 
         if self.config.datatype == 'lie':
-            sample = self.lie_tsfm(self.data[idx])
+            sample = self.data[idx][:, :-1, :3].reshape(self.data[idx].shape[0], -1)
+
+            #sample = self.lie_tsfm(self.data[idx])
         elif self.config.datatype == 'xyz':
             pass
         sample = self.formatdata(sample, False)
@@ -252,7 +256,9 @@ class CSLDataset(Dataset):
 
     def __getitem__(self, idx):
         if self.config.datatype == 'lie':
-            sample = self.lie_tsfm(self.data[idx])
+            sample = self.data[idx]
+            sample = np.delete(sample[:, :, :3], [1, 3, 8, 14, 20], axis=1)
+            sample = sample.reshape(sample.shape[0], -1)
         elif self.config.datatype == 'xyz':
             pass
         sample = self.formatdata(sample, False)

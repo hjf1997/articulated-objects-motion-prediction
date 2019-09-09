@@ -2,3 +2,6 @@
 data/
 #checkpoint/
 .idea/
+src/__pycache__/
+src/model/
+src/pre_LSTN.py
