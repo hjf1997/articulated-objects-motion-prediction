@@ -59,7 +59,10 @@ class DatasetChooser(object):
                     data = data_loader.get_data()
                     self.config.input_size = data[0][list(data[0].keys())[0]].shape[2]
                 elif self.dataset == 'CSL':
-                    pass
+                    bone_length_path = './data/CSL/P01_01_00_0_lie.mat'
+                    data_loader = loader.CSLPredictionDataset(self.config)
+                    data = data_loader.get_data()
+                    self.config.input_size = data[0][list(data[0].keys())[0]].shape[2]
             elif self.config.datatype == 'xyz':
                 if self.dataset == 'Human':
                     pass
