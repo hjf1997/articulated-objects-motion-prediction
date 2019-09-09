@@ -168,7 +168,7 @@ class FishDataset(Dataset):
         if self.config.datatype == 'lie':
             sample = self.data[idx][:, :-1, :3].reshape(self.data[idx].shape[0], -1)
 
-            # sample = self.lie_tsfm(self.data[idx])
+            #sample = self.lie_tsfm(self.data[idx])
         elif self.config.datatype == 'xyz':
             pass
         sample = self.formatdata(sample, False)
@@ -210,7 +210,7 @@ class MouseDataset(Dataset):
         if self.config.datatype == 'lie':
             sample = self.data[idx][:, :-1, :3].reshape(self.data[idx].shape[0], -1)
 
-            # sample = self.lie_tsfm(self.data[idx])
+            #sample = self.lie_tsfm(self.data[idx])
         elif self.config.datatype == 'xyz':
             pass
         sample = self.formatdata(sample, False)
@@ -241,13 +241,8 @@ class CSLDataset(Dataset):
             subjects.remove('P17')
             subjects.remove('P39')
             subjects.remove('P40')
-            subjects.remove('P16')
-            subjects.remove('P11')
-            subjects.remove('P13')
-            subjects.remove('P18')
-
         else:
-            subjects = ["P01", "P02", "P03", "P05", "P07",  'P50']
+            subjects = ["P01", "P02", "P03", "P04", "P05", "P06", "P07", "P08", "P09", 'P50']
 
         set = []
         # 这里应该还要遍历一个动作list的，测试就先不写
@@ -578,50 +573,3 @@ class FishPredictionDataset(Dataset):
             pass
         sample = self.formatdata(x_sample, y_sample)
         return sample
-
-
-class CSLPredictionDataset(object):
-
-    def __init__(self, config):
-        self.config = config
-        if config.datatyoe == 'lie':
-            x = []
-            y = []
-            set_name = 'CSL'
-            personNum = ['01', '02', '03', '05', '07', '10', '12', '14', '19', '20', '21', '22', '23', '24', '25'
-                , '26', '27', '28', '29', '30', '31', '32', '33', '34', '35', '36', '37', '38', '41', '42', '43', '44',
-                         '45', '46', '47', '48', '49', '50']
-            for i in range(len(personNum)):
-                x_filename = './data/' + set_name + '/Test/x_test_lie/P' + str(i) + '_condition_1' + '_lie.mat'
-                y_filename = './data/' + set_name + '/Test/y_test_lie/P' + str(i) + '_condition_1' + '_lie.mat'
-
-                x_rawdata = sio.loadmat(x_filename)
-                x_rawdata = x_rawdata[list(x_rawdata.keys())[3]]
-
-                y_rawdata = sio.loadmat(y_filename)
-                y_rawdata = y_rawdata[list(y_rawdata.keys())[3]]
-
-                x_data = x_rawdata[:, :-1, :3].reshape(x_rawdata.shape[0], -1)
-                x.append(x_data)
-
-                y_data = y_rawdata[:, :-1, :3].reshape(y_rawdata.shape[0], -1)
-                y.append(y_data)
-        elif config.datatype == 'xyz':
-            pass
-
-        x = np.array(x)
-        y = np.array(y)
-        dec_in_test = np.reshape(x[:, -1, :], [x.shape[0], 1, x.shape[2]])
-        x = x[:, 0:-1, :]
-
-        self.x_test_dict = {}
-        self.y_test_dict = {}
-        self.dec_in_test_dict = {}
-
-        self.x_test_dict['default'] = x
-        self.y_test_dict['default'] = y
-        self.dec_in_test_dict['default'] = dec_in_test
-
-    def get_data(self):
-
-        return [self.x_test_dict, self.y_test_dict, self.dec_in_test_dict]
