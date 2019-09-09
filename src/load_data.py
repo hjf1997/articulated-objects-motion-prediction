@@ -48,28 +48,12 @@ class FormatData(object):
         return {'encoder_inputs': encoder_inputs, 'decoder_inputs': decoder_inputs, 'decoder_outputs': decoder_outputs}
 
 
-class LieTsfm(object):
-    """
-    This class is redundant and could be integrated into dataset class. However, we didn't do that due to some historical events.
-    """
-
-    def __init__(self, config):
-        self.config = config
-
-    def __call__(self, sample):
-        rawdata = sample
-
-        data = rawdata[:, :-1, :3].reshape(rawdata.shape[0], -1)
-        return data
-
-
 class HumanDataset(Dataset):
 
     def __init__(self, config, train=True):
 
         self.config = config
         self.train = train
-        self.lie_tsfm = LieTsfm(config)
         self.formatdata = FormatData(config)
         if config.datatype == 'lie':
             if train:
@@ -142,7 +126,6 @@ class FishDataset(Dataset):
 
         self.config = config
         self.train = train
-        self.lie_tsfm = LieTsfm(config)
         self.formatdata = FormatData(config)
         if config.datatype == 'lie':
             train_path = './data/Fish/Train/train_lie/'
@@ -184,7 +167,6 @@ class MouseDataset(Dataset):
     def __init__(self, config, train):
         self.config = config
         self.train = train
-        self.lie_tsfm = LieTsfm(config)
         self.formatdata = FormatData(config)
         if config.datatype == 'lie':
             train_path = './data/Mouse/Train/train_lie/'
@@ -226,7 +208,6 @@ class CSLDataset(Dataset):
     def __init__(self, config, train=True):
         self.config = config
         self.train = train
-        self.lie_tsfm = LieTsfm(config)
         self.formatdata = FormatData(config)
         if config.datatype == 'lie':
             train_path = './data/CSL/Train/train_lie/'
@@ -533,43 +514,3 @@ class H36mDataset(Dataset):
         return len(self.data)
 
 
-# The class below is discarded, testing on the mouse and fish dataset could be done using the same AnimalPredictionDataset dataset
-class FishPredictionDataset(Dataset):
-
-    def __init__(self, config):
-        self.config = config
-        self.lie_tsfm = LieTsfm(config)
-        self.formatdata = FormatDataPre()
-        if config.datatype == 'lie':
-            x = []
-            y = []
-            for i in range(8):
-                x_filename = './data/Fish/Test/x_test_lie/test_' + str(i) + '_lie.mat'
-                y_filename = './data/Fish/Test/y_test_lie/test_' + str(i) + '_lie.mat'
-
-                x_rawdata = sio.loadmat(x_filename)
-                x_rawdata = x_rawdata[list(x_rawdata.keys())[3]]
-
-                y_rawdata = sio.loadmat(y_filename)
-                y_rawdata = y_rawdata[list(y_rawdata.keys())[3]]
-
-                x.append(x_rawdata)
-                y.append(y_rawdata)
-            self.x = x
-            self.y = y
-        else:
-            pass
-
-    def __len__(self):
-
-        return len(self.x)
-
-    def __getitem__(self, idx):
-
-        if self.config.datatype == 'lie':
-            x_sample = self.lie_tsfm(self.x[idx])
-            y_sample = self.lie_tsfm(self.y[idx])
-        elif self.config.datatype == 'xyz':
-            pass
-        sample = self.formatdata(x_sample, y_sample)
-        return sample
