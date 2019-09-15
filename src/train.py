@@ -9,6 +9,7 @@ from choose_dataset import DatasetChooser
 from loss import loss as Loss
 import utils
 import torch.optim as optim
+import scipy.io as sio
 import config
 from plot_animation import plot_animation
 import os
@@ -41,6 +42,7 @@ def train(config, checkpoint_dir):
     # generate data loader
     if config.longterm is True:
         config.output_window_size = 100
+
     choose = DatasetChooser(config)
     train_dataset, bone_length = choose(train=True)
     train_loader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True)
@@ -78,7 +80,7 @@ def train(config, checkpoint_dir):
         # Train
         #with torch.autograd.set_detect_anomaly(True):
         for it in range(config.training_size):
-            # for k in range(1):
+            # for k in range(10):
             #     ind = 0
             #     for i, data in enumerate(train_loader, 0):
             #         if ind == 0:
@@ -94,21 +96,20 @@ def train(config, checkpoint_dir):
                 encoder_inputs = data['encoder_inputs'].float().to(device)
                 decoder_inputs = data['decoder_inputs'].float().to(device)
                 decoder_outputs = data['decoder_outputs'].float().to(device)
-                print(torch.mean(torch.abs(decoder_outputs)))
                 prediction = net(encoder_inputs, decoder_inputs, train=True)
-                print(torch.mean(torch.abs(prediction)))
-
                 loss = Loss(prediction, decoder_outputs, bone_length, config)
+                #mean_error, _ = utils.mean_euler_error(config, 'xx', prediction.detach().cpu().numpy(), decoder_outputs.detach().cpu().numpy())
                 net.zero_grad()
                 loss.backward()
                 _ = torch.nn.utils.clip_grad_norm_(net.parameters(), 5)
                 optimizer.step()
+
             prog.update(it + 1, [("Training Loss", loss.item())])
 
         # valid
         with torch.no_grad():
             for it in range(config.validation_size):
-                for j in range(1):
+                for j in range(3):
                     for i, data in enumerate(test_loader, 0):
                         if j == 0 and i == 0:
                             encoder_inputs = data['encoder_inputs'].float().to(device)
@@ -119,11 +120,13 @@ def train(config, checkpoint_dir):
                             decoder_inputs = torch.cat([data['decoder_inputs'].float().to(device), decoder_inputs], dim=0)
                             decoder_outputs = torch.cat([data['decoder_outputs'].float().to(device), decoder_outputs], dim=0)
 
-                prediction = net(encoder_inputs, decoder_inputs, train=False)
+                prediction = net(encoder_inputs, decoder_inputs, train=True)
+                #mean_error, _ = utils.mean_euler_error(config, 'xx', prediction.detach().cpu().numpy(), decoder_outputs.detach().cpu().numpy())
+                #sio.savemat('./output.mat', {'pre':prediction.detach().cpu().numpy()})
                 loss = Loss(prediction, decoder_outputs, bone_length, config)
                 prog_valid.update(it+1, [("Testing Loss", loss.item())])
 
-        # Test prediction
+         #Test prediction
         actions = list(x_test.keys())
         y_predict = {}
         with torch.no_grad():

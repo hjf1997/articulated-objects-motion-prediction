@@ -34,7 +34,7 @@ class FormatData(object):
         total_frames = self.config.input_window_size + self.config.output_window_size
 
         video_frames = sample.shape[0]
-        idx = np.random.randint(2, video_frames - total_frames)
+        idx = np.random.randint(1, video_frames - total_frames)
 
         data_seq = sample[idx:idx + total_frames, :]
         encoder_inputs = data_seq[:self.config.input_window_size - 1, :]
@@ -76,7 +76,7 @@ class HumanDataset(Dataset):
                 train_path = './data/h3.6m/Train/train_lie'
             else:
                 train_path = './data/h3.6m/Test/test_lie'
-        elif config.datatype == 'xyz':
+        elif config.datatype == '':
             train_path = './data/h3.6m/Train/train_xyz'
         if train:
             subjects = ['S1', 'S6', 'S7', 'S8', 'S9', 'S11']
@@ -235,35 +235,51 @@ class CSLDataset(Dataset):
             train_path = './data/CSL/Train/train_xyz/'
             tail = '_xyz.mat'
         if train:
-            subjects = ["P" + str(i + 1) for i in range(9, 49)]
-            # 因为这些人被干掉了，动作不标准
-            subjects.remove('P15')
-            subjects.remove('P17')
-            subjects.remove('P39')
-            subjects.remove('P40')
-            subjects.remove('P16')
-            subjects.remove('P11')
-            subjects.remove('P13')
-            subjects.remove('P18')
-
+            subjects = ["S1", "S2", "S3", "S4"]
         else:
-            subjects = ["P01", "P02", "P03", "P05", "P07",  'P50']
+            subjects = ["S5"]
+
+        if config.filename == 'all':
+            actions = ['Circle', 'Square', 'Triangle']
+        else:
+            actions = [config.filename]
 
         set = []
+        #complete_train = []
         # 这里应该还要遍历一个动作list的，测试就先不写
         for id in subjects:
-            for i in range(2):
-                filename = train_path + id + "_condition_" + str(i + 1) + tail
-                rawdata = sio.loadmat(filename)
-                rawdata = rawdata[list(rawdata.keys())[3]]
-                set.append(rawdata)
+            for action in actions:
+                for i in range(5):
+                    filename = '{0}/{1}_{2}_{3}_lie.mat'.format(train_path, id, action, i + 1)
+                    rawdata = sio.loadmat(filename)
+                    rawdata = rawdata[list(rawdata.keys())[3]]
+                    rawdata = np.delete(rawdata[:, :, :3], [4, 11, 18], axis=1)
+                    #rawdata = np.delete(rawdata[:, :, :3], [5, 11, 16, 21, 26], axis=1)
+                    rawdata = rawdata.reshape(rawdata.shape[0], -1)
+                    set.append(rawdata)
+
+        #     if len(complete_train) == 0:
+        #         complete_train = copy.deepcopy(set[-1])
+        #     else:
+        #         complete_train = np.append(complete_train, set[-1], axis=0)
+        #
+        # if not train and config.data_mean is None:
+        #     print('Load train dataset first!')
+        #
+        # if train and config.datatype == 'lie':
+        #     data_mean, data_std, dim_to_ignore, dim_to_use = utils.normalization_stats(complete_train)
+        #     config.data_mean = data_mean
+        #     config.data_std = data_std
+        #     config.dim_to_ignore = dim_to_ignore
+        #     config.dim_to_use = dim_to_use
+
+        #set = utils.normalize_data(set, config.data_mean, config.data_std, list(range(0, 48)))
+
         self.data = set
 
     def __getitem__(self, idx):
         if self.config.datatype == 'lie':
             sample = self.data[idx]
-            sample = np.delete(sample[:, :, :3], [1, 3, 8, 14, 20], axis=1)
-            sample = sample.reshape(sample.shape[0], -1)
         elif self.config.datatype == 'xyz':
             pass
         sample = self.formatdata(sample, False)
@@ -327,8 +343,7 @@ class HumanPredictionDataset(object):
         self.config = config
         if config.filename == 'all':
             self.actions = ['directions', 'discussion', 'eating', 'greeting', 'phoning', 'posing', 'purchases',
-                            'sitting',
-                            'sittingdown', 'smoking', 'takingphoto', 'waiting', 'walking', 'walkingdog',
+                            'sitting', 'sittingdown', 'smoking', 'takingphoto', 'waiting', 'walking', 'walkingdog',
                             'walkingtogether']
         else:
             self.actions = [config.filename]
@@ -584,43 +599,45 @@ class CSLPredictionDataset(object):
 
     def __init__(self, config):
         self.config = config
-        if config.datatype == 'lie':
-            x = []
-            y = []
-            set_name = 'CSL'
-            personNum = ['01', '02', '03', '05', '07', '10', '12', '14', '19', '20', '21', '22', '23', '24', '25'
-                , '26', '27', '28', '29', '30', '31', '32', '33', '34', '35', '36', '37', '38', '41', '42', '43', '44',
-                         '45', '46', '47', '48', '49', '50']
-            for i in range(len(personNum)):
-                x_filename = './data/' + set_name + '/Test/x_test_lie/P' + str(personNum[i]) + '_condition_1' + '_lie.mat'
-                y_filename = './data/' + set_name + '/Test/y_test_lie/P' + str(personNum[i]) + '_condition_1' + '_lie.mat'
-
-                x_rawdata = sio.loadmat(x_filename)
-                x_rawdata = x_rawdata[list(x_rawdata.keys())[3]]
-
-                y_rawdata = sio.loadmat(y_filename)
-                y_rawdata = y_rawdata[list(y_rawdata.keys())[3]]
-
-                x_data = np.delete(x_rawdata[:, :, :3], [1, 3, 8, 14, 20], axis=1).reshape(x_rawdata.shape[0], -1)
-                x.append(x_data)
-
-                y_data = np.delete(y_rawdata[:, :, :3], [1, 3, 8, 14, 20], axis=1).reshape(y_rawdata.shape[0], -1)
-                y.append(y_data)
-        elif config.datatype == 'xyz':
-            pass
-
-        x = np.array(x)
-        y = np.array(y)
-        dec_in_test = np.reshape(x[:, -1, :], [x.shape[0], 1, x.shape[2]])
-        x = x[:, 0:-1, :]
-
         self.x_test_dict = {}
         self.y_test_dict = {}
         self.dec_in_test_dict = {}
+        if config.filename == 'all':
+            self.actions = ['Circle', 'Square', 'Triangle']
+        else:
+            self.actions = [config.filename]
 
-        self.x_test_dict['default'] = x
-        self.y_test_dict['default'] = y
-        self.dec_in_test_dict['default'] = dec_in_test
+        if config.datatype == 'lie':
+
+            for action in self.actions:
+                x = []
+                y = []
+                for subact in [0, 1, 2, 3, 4]:
+                    if config.datatype == 'lie':
+                        x_filename = './data/CSL/Test/x_test_lie/test_' + str(action) +  '_' +str(subact) + '_lie.mat'
+                        y_filename = './data/CSL/Test/y_test_lie/test_' + str(action) +  '_' +str(subact) + '_lie.mat'
+
+                        x_rawdata = sio.loadmat(x_filename)
+                        x_rawdata = x_rawdata[list(x_rawdata.keys())[3]]
+                        x_rawdata = np.delete(x_rawdata[:, :, :3], [4, 11, 18], axis=1).reshape(x_rawdata.shape[0], -1)
+                        x.append(x_rawdata)
+
+                        y_rawdata = sio.loadmat(y_filename)
+                        y_rawdata = y_rawdata[list(y_rawdata.keys())[3]]
+                        y_rawdata = np.delete(y_rawdata[:, :, :3], [4, 11, 18], axis=1).reshape(y_rawdata.shape[0], -1)
+                        y.append(y_rawdata)
+
+                x = np.array(x)
+                y = np.array(y)
+                dec_in_test = np.reshape(x[:, -1, :], [x.shape[0], 1, x.shape[2]])
+                x = x[:, 0:-1, :]
+                self.x_test_dict[action] = x
+                self.y_test_dict[action] = y
+                self.dec_in_test_dict[action] = dec_in_test
+
+        elif config.datatype == 'xyz':
+            pass
+
 
     def get_data(self):
 

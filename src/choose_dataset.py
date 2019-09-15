@@ -29,7 +29,7 @@ class DatasetChooser(object):
                     data = loader.MouseDataset(self.config, train=train)
                     self.config.input_size = data[0]['encoder_inputs'].shape[1]
                 elif self.dataset == 'CSL':
-                    bone_length_path = './data/CSL/P01_01_00_0_lie.mat'
+                    bone_length_path = './data/CSL/Train/train_lie/S1_Circle_1_lie.mat'
                     data = loader.CSLDataset(self.config, train=train)
                     self.config.input_size = data[0]['encoder_inputs'].shape[1]
             elif self.config.datatype == 'xyz':
@@ -59,7 +59,7 @@ class DatasetChooser(object):
                     data = data_loader.get_data()
                     self.config.input_size = data[0][list(data[0].keys())[0]].shape[2]
                 elif self.dataset == 'CSL':
-                    bone_length_path = './data/CSL/P01_01_00_0_lie.mat'
+                    bone_length_path = './data/CSL/Train/train_lie/S1_Circle_1_lie.mat'
                     data_loader = loader.CSLPredictionDataset(self.config)
                     data = data_loader.get_data()
                     self.config.input_size = data[0][list(data[0].keys())[0]].shape[2]
@@ -126,7 +126,8 @@ class DatasetChooser(object):
             if self.config.dataset is not 'CSL':
                 bone = bone[1:, :]
             elif self.config.dataset is 'CSL':
-                bone = np.delete(bone, [0, 2, 4, 9, 15], axis=0)
+                bone = np.delete(bone, [0, 5, 12], axis=0)
+                #bone = np.delete(bone, [0, 5, 10, 15, 22], axis=0)
         elif self.config.datatype == 'xyz':
             for i in range(njoints):
                 bone[i, 0] = round(np.linalg.norm(rawdata[0, i, :] - rawdata[0, i - 1, :]), 2)

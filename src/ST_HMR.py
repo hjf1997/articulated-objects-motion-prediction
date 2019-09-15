@@ -50,10 +50,10 @@ class ST_HMR(nn.Module):
         # [batch, config.input_window_size-1, hidden_size]
         h = h.view([h.shape[0], h.shape[1], int(h.shape[2]/self.config.hidden_size), self.config.hidden_size])
         # [batch, nbones, frames, hidden_state]
-        h = F.dropout(h, self.config.keep_prob, train)
+        #h = F.dropout(h, self.config.keep_prob, train)
         c_h = torch.empty_like(h)
         c_h.copy_(h)
-        c_h = F.dropout(c_h, self.config.keep_prob, train)
+        #c_h = F.dropout(c_h, self.config.keep_prob, train)
 
         p = torch.empty_like(h)
         p.copy_(h)
@@ -291,16 +291,22 @@ class Kinematics_LSTM_decoder(nn.Module):
         self.seq_length_out = config.output_window_size
         self.nbones = config.nbones
         self.lstm = nn.ModuleList()
-        self.weights_out_spine = torch.nn.Parameter(torch.empty(int(config.input_size/config.bone_dim*config.hidden_size), config.training_chain_length[2]).uniform_(-0.04, 0.04))
-        self.bias_out_spine = torch.nn.Parameter(torch.empty(config.training_chain_length[2]).uniform_(-0.04, 0.04))
-        self.weights_out_leg1 = torch.nn.Parameter(torch.empty(int(config.input_size/config.bone_dim*config.hidden_size), config.training_chain_length[0]).uniform_(-0.04, 0.04))
-        self.bias_out_leg1 = torch.nn.Parameter(torch.empty(config.training_chain_length[0]).uniform_(-0.04, 0.04))
-        self.weights_out_leg2 = torch.nn.Parameter(torch.empty(int(config.input_size/config.bone_dim*config.hidden_size), config.training_chain_length[1]).uniform_(-0.04, 0.04))
-        self.bias_out_leg2 = torch.nn.Parameter(torch.empty(config.training_chain_length[1]).uniform_(-0.04, 0.04))
-        self.weights_out_arm1 = torch.nn.Parameter(torch.empty(int(config.input_size/config.bone_dim*config.hidden_size), config.training_chain_length[3]).uniform_(-0.04, 0.04))
-        self.bias_out_arm1 = torch.nn.Parameter(torch.empty(config.training_chain_length[3]).uniform_(-0.04, 0.04))
-        self.weights_out_arm2 = torch.nn.Parameter(torch.empty(int(config.input_size/config.bone_dim*config.hidden_size), config.training_chain_length[4]).uniform_(-0.04, 0.04))
-        self.bias_out_arm2 = torch.nn.Parameter(torch.empty(config.training_chain_length[4]).uniform_(-0.04, 0.04))
+        self.weights_out_spine = torch.nn.Parameter(torch.empty(int(config.input_size/config.bone_dim*config.hidden_size), config.training_chain_length[0]).uniform_(-0.04, 0.04))
+        self.bias_out_spine = torch.nn.Parameter(torch.empty(config.training_chain_length[0]).uniform_(-0.04, 0.04))
+        self.weights_out_arm1 = torch.nn.Parameter(torch.empty(int(config.input_size/config.bone_dim*config.hidden_size), config.training_chain_length[1]).uniform_(-0.04, 0.04))
+        self.bias_out_arm1 = torch.nn.Parameter(torch.empty(config.training_chain_length[1]).uniform_(-0.04, 0.04))
+        self.weights_out_arm2 = torch.nn.Parameter(torch.empty(int(config.input_size/config.bone_dim*config.hidden_size), config.training_chain_length[2]).uniform_(-0.04, 0.04))
+        self.bias_out_arm2 = torch.nn.Parameter(torch.empty(config.training_chain_length[2]).uniform_(-0.04, 0.04))
+        # self.weights_out_spine = torch.nn.Parameter(torch.empty(int(config.input_size/config.bone_dim*config.hidden_size), config.training_chain_length[2]).uniform_(-0.04, 0.04))
+        # self.bias_out_spine = torch.nn.Parameter(torch.empty(config.training_chain_length[2]).uniform_(-0.04, 0.04))
+        # self.weights_out_leg1 = torch.nn.Parameter(torch.empty(int(config.input_size/config.bone_dim*config.hidden_size), config.training_chain_length[0]).uniform_(-0.04, 0.04))
+        # self.bias_out_leg1 = torch.nn.Parameter(torch.empty(config.training_chain_length[0]).uniform_(-0.04, 0.04))
+        # self.weights_out_leg2 = torch.nn.Parameter(torch.empty(int(config.input_size/config.bone_dim*config.hidden_size), config.training_chain_length[1]).uniform_(-0.04, 0.04))
+        # self.bias_out_leg2 = torch.nn.Parameter(torch.empty(config.training_chain_length[1]).uniform_(-0.04, 0.04))
+        # self.weights_out_arm1 = torch.nn.Parameter(torch.empty(int(config.input_size/config.bone_dim*config.hidden_size), config.training_chain_length[3]).uniform_(-0.04, 0.04))
+        # self.bias_out_arm1 = torch.nn.Parameter(torch.empty(config.training_chain_length[3]).uniform_(-0.04, 0.04))
+        # self.weights_out_arm2 = torch.nn.Parameter(torch.empty(int(config.input_size/config.bone_dim*config.hidden_size), config.training_chain_length[4]).uniform_(-0.04, 0.04))
+        # self.bias_out_arm2 = torch.nn.Parameter(torch.empty(config.training_chain_length[4]).uniform_(-0.04, 0.04))
         # LSTM First layer
         self.lstm.append(nn.LSTMCell(config.input_size, int(config.input_size / config.bone_dim * config.hidden_size)))
         # Kinematics LSTM layer
@@ -309,10 +315,10 @@ class Kinematics_LSTM_decoder(nn.Module):
         arm = nn.LSTMCell(int(config.input_size / config.bone_dim * config.hidden_size), int(config.input_size / config.bone_dim * config.hidden_size))
         self.lstm.append(arm)
         self.lstm.append(arm)
-        leg = nn.LSTMCell(int(config.input_size / config.bone_dim * config.hidden_size), int(config.input_size / config.bone_dim * config.hidden_size))
-        self.lstm.append(leg)
-        self.lstm.append(leg)
-        self.lstm_layer = 6
+        # leg = nn.LSTMCell(int(config.input_size / config.bone_dim * config.hidden_size), int(config.input_size / config.bone_dim * config.hidden_size))
+        # self.lstm.append(leg)
+        # self.lstm.append(leg)
+        self.lstm_layer = 4
 
     def forward(self, hidden_states, cell_states, global_t_state, p):
         """
@@ -359,21 +365,30 @@ class Kinematics_LSTM_decoder(nn.Module):
                 h[i][:, frame + 1, :], c_h[i][:, frame + 1, :] \
                     = cell(input, (h[i][:, frame, :].clone(), c_h[i][:, frame, :].clone()))
 
+                # if i == 1:
+                #     pre[:, frame, self.config.index[2]] = torch.matmul(h[i][:, frame + 1, :].clone(), self.weights_out_spine) + \
+                #                    self.bias_out_spine + input_first[:, self.config.index[2]]
+                # elif i == 2:
+                #     pre[:, frame, self.config.index[0]] = torch.matmul(h[i][:, frame + 1, :].clone(), self.weights_out_leg1) + \
+                #                    self.bias_out_leg1 + input_first[:, self.config.index[0]]
+                # elif i == 3:
+                #     pre[:, frame, self.config.index[1]] = torch.matmul(h[i][:, frame + 1, :].clone(), self.weights_out_leg2) + \
+                #                    self.bias_out_leg2 + input_first[:, self.config.index[1]]
+                # elif i == 4:
+                #     pre[:, frame, self.config.index[3]] = torch.matmul(h[i][:, frame + 1, :].clone(), self.weights_out_arm1) + \
+                #                    self.bias_out_arm1 + input_first[:, self.config.index[3]]
+                # elif i == 5:
+                #     pre[:, frame, self.config.index[4]] = torch.matmul(h[i][:, frame + 1, :].clone(), self.weights_out_arm2) + \
+                #                    self.bias_out_arm2 + input_first[:, self.config.index[4]]
                 if i == 1:
-                    pre[:, frame, self.config.index[2]] = torch.matmul(h[i][:, frame + 1, :].clone(), self.weights_out_spine) + \
-                                   self.bias_out_spine + input_first[:, self.config.index[2]]
+                    pre[:, frame, self.config.index[0]] = torch.matmul(h[i][:, frame + 1, :].clone(), self.weights_out_spine) + \
+                                   self.bias_out_spine + input_first[:, self.config.index[0]]
                 elif i == 2:
-                    pre[:, frame, self.config.index[0]] = torch.matmul(h[i][:, frame + 1, :].clone(), self.weights_out_leg1) + \
-                                   self.bias_out_leg1 + input_first[:, self.config.index[0]]
+                    pre[:, frame, self.config.index[1]] = torch.matmul(h[i][:, frame + 1, :].clone(), self.weights_out_arm1) + \
+                                   self.bias_out_arm1 + input_first[:, self.config.index[1]]
                 elif i == 3:
-                    pre[:, frame, self.config.index[1]] = torch.matmul(h[i][:, frame + 1, :].clone(), self.weights_out_leg2) + \
-                                   self.bias_out_leg2 + input_first[:, self.config.index[1]]
-                elif i == 4:
-                    pre[:, frame, self.config.index[3]] = torch.matmul(h[i][:, frame + 1, :].clone(), self.weights_out_arm1) + \
-                                   self.bias_out_arm1 + input_first[:, self.config.index[3]]
-                elif i == 5:
-                    pre[:, frame, self.config.index[4]] = torch.matmul(h[i][:, frame + 1, :].clone(), self.weights_out_arm2) + \
-                                   self.bias_out_arm2 + input_first[:, self.config.index[4]]
+                    pre[:, frame, self.config.index[2]] = torch.matmul(h[i][:, frame + 1, :].clone(), self.weights_out_arm2) + \
+                                   self.bias_out_arm2 + input_first[:, self.config.index[2]]
 
         return pre
 
