@@ -17,7 +17,7 @@ class TrainConfig(object):
     validation_size = 20  # Validation iterations per epoch
     restore = False  # Restore the trained weights or restart training from scratch
     longterm = False  # Whether we are doing super longterm prediction
-    keep_prob = 0.8 # Keep probability for RNN cell weights
+    keep_prob = 0.9  # Keep probability for RNN cell weights
     context_window = 1  # Context window size in HMR, this para only applies to HMR
     encoder_recurrent_steps = 10  # Number of recurrent steps in HMR/ST_HMR
     decoder_recurrent_steps = 2  # Number of recurrent steps in ST-HMR decoder expect kinematics LSTM
@@ -27,8 +27,8 @@ class TrainConfig(object):
     models_name = ['ERD', 'LSTM3lr', 'GRU', 'HMR', 'ST_HMR']
     model = models_name[4]
 
-    loss_name = ['l2', 'lie']
-    loss = loss_name[1]
+    loss_name = ['l2', 'lie', 'kinematicslie']
+    loss = loss_name[2]
     """Only suitable for ST_HMR"""
     share_encoder_weights = True  # share encoder weight at each recurrent step, this param only applies to ST_HMR
     bone_dim = 3  # dimension of one bone representation, static in all datasets
@@ -62,6 +62,11 @@ class TrainConfig(object):
                                  np.array([0, 12, 13, 14, 15]),  # spine
                                  np.array([13, 17, 18, 19, 22, 19, 21]),  # arm
                                  np.array([13, 25, 26, 27, 30, 27, 29])]  # arm
+            self.chain_loss_config = [np.array([1, 2, 3, 4, 5]),  # leg
+                                 np.array([6, 7, 8, 9, 10]),  # leg
+                                 np.array([0, 11, 12, 13, 14, 15]),  # spine
+                                 np.array([16, 17, 18, 19, 20, 21, 22, 23]),  # arm
+                                 np.array([24, 25, 26, 27, 28, 19, 30, 31])]  # arm
             self.training_chain_length = [8, 8, 18, 10, 10]
             self.index = [[6, 7, 8, 9, 10, 11, 12, 13],
                           [14, 15, 16, 17, 18, 19, 20, 21],
@@ -75,12 +80,9 @@ class TrainConfig(object):
                                  np.array([10, 11, 12, 13, 14]),  # spine
                                  np.array([15, 16, 17, 18, 19, 20, 21]),  # arm
                                  np.array([22, 23, 24, 25, 26, 27, 28])]  # arm
-            # self.training_chain_length = [12, 12, 12, 18, 18]
-            # self.index = [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-            #               [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23],
-            #               [24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35],
-            #               [36, 37, 38,39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53],
-            #               [54, 55, 56,57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71]]
+            self.chain_loss_config = [np.array([0, 1, 2, 3, 4 ]),  # spine
+                                 np.array([5, 6, 7, 8, 9, 10]),  # arm
+                                 np.array([11, 12, 13, 14, 15])]  # arm
             self.training_chain_length = [12, 18, 18]
             self.index = [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
                           [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29],

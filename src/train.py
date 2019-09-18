@@ -126,7 +126,7 @@ def train(config, checkpoint_dir):
                 loss = Loss(prediction, decoder_outputs, bone_length, config)
                 prog_valid.update(it+1, [("Testing Loss", loss.item())])
 
-         #Test prediction
+        #Test prediction
         actions = list(x_test.keys())
         y_predict = {}
         with torch.no_grad():
@@ -145,6 +145,8 @@ def train(config, checkpoint_dir):
             error_actions += error.mean()
         error_actions /= len(actions)
         if error_actions < best_error:
+            print(error_actions)
+            print(best_error)
             best_error_list = error
             best_error = error_actions
             torch.save(net.state_dict(), checkpoint_dir + 'Epoch_' + str(epoch + 1) + '.pth')
@@ -222,19 +224,19 @@ def prediction(config, checkpoint_dir):
                     y_p = y_predict[act][i]
                     y_t = y_test[act][i]
 
-                y_p_xyz = utils.fk(y_p, config, bone_length)
-                y_t_xyz = utils.fk(y_t, config, bone_length)
 
                 filename = act + '_' + str(i)
                 if config.visualize:
                     # 蓝色是我的
+                    y_p_xyz = utils.fk(y_p, config, bone_length)
+                    y_t_xyz = utils.fk(y_t, config, bone_length)
                     pre_plot = plot_animation(y_t_xyz, y_p_xyz, config, filename)
                     pre_plot.plot()
 
 
 if __name__ == '__main__':
 
-    config = config.TrainConfig('CSL', 'lie', 'all')
+    config = config.TrainConfig('Human', 'lie', 'all')
     checkpoint_dir, output_dir = utils.create_directory(config)
     if config.train_model is True:
         train(config, checkpoint_dir)
