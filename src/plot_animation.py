@@ -20,13 +20,14 @@ def plot_animation(predict, labels, config, filename):
     return predict_plot
 
 
+
 class plot_h36m(object):
 
     def __init__(self, predict, labels, config, filename):
         self.joint_xyz = labels
         self.nframes = labels.shape[0]
         self.joint_xyz_f = predict
-
+        matplotlib.rc('axes', edgecolor=(1.0, 1.0, 1.0, 0.0))
         # set up the axes
         xmin = -750
         xmax = 750
@@ -37,9 +38,16 @@ class plot_h36m(object):
 
         self.fig = plt.figure()
         self.ax = plt.axes(xlim=(xmin, xmax), ylim=(ymin, ymax), zlim=(zmin, zmax), projection='3d')
-        self.ax.set_xlabel('x')
-        self.ax.set_ylabel('y')
-        self.ax.set_zlabel('z')
+        self.ax.grid(False)
+        self.ax.w_xaxis.set_pane_color((1.0, 1.0, 0.0, 0.0))
+        self.ax.w_yaxis.set_pane_color((1.0, 1.0, 0.0, 0.0))
+        #self.ax.w_zaxis.set_pane_color((1.0, 1.0, 0.0, 1.0))
+        #self.ax.set_xlabel('x')
+        #self.ax.set_ylabel('y')
+        #self.ax.set_zlabel('z')
+        self.ax.set_xticks([])
+        self.ax.set_zticks([])
+        self.ax.set_yticks([])
 
         self.chain = config.chain_config
         # self.chain = [np.array([0, 1, 2, 3, 4, 5]),
@@ -74,8 +82,8 @@ class plot_h36m(object):
 
     def plot(self):
         ani = FuncAnimation(self.fig, self.update, frames=self.nframes, interval=40, repeat=False)
-        plt.title(self.filename, fontsize=16)
-        #ani.save(self.filename + '.gif', writer='imagemagick')
+        #plt.title(self.filename, fontsize=16)
+        ani.save(self.filename + '.gif', writer='pillow')
         plt.show()
 
 

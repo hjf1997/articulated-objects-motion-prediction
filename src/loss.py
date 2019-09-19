@@ -46,7 +46,7 @@ def linearizedlie_loss(prediction, y, bone, config):
         for i in range(j, chainlength):
             weights[j*3:j*3+3] = weights[j*3] + (chainlength - i) * bone[i][0]
 
-    weights = weights / weights.mean()
+    weights = weights / weights.max()
     loss = torch.sub(y, prediction) ** 2
     loss = torch.mean(loss, dim=[0, 1])
     loss = loss * weights

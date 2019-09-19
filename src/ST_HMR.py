@@ -55,9 +55,9 @@ class ST_HMR(nn.Module):
         c_h.copy_(h)
         #c_h = F.dropout(c_h, self.config.keep_prob, train)
 
-        p = torch.empty_like(h)
-        p.copy_(h)
-
+        #p = torch.empty_like(h)
+        #p.copy_(h)
+        p = encoder_inputs.view([encoder_inputs.shape[0], encoder_inputs.shape[1], int(encoder_inputs.shape[2]/self.config.bone_dim), self.config.bone_dim])
         # init global states
         # [batch,  nbones, hidden_size]
         g_t = torch.mean(h, 2, keepdim=True).expand_as(h)
@@ -84,7 +84,8 @@ class EncoderCell(nn.Module):
 
         """h update gates"""
         # input  gate
-        self.Ui = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size, self.config.hidden_size))
+        #self.Ui = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size, self.config.hidden_size))
+        self.Ui = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.bone_dim, self.config.hidden_size))
         self.Wti = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size * 3, self.config.hidden_size))
         self.Wsi = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size, self.config.hidden_size))
         self.Zti = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size, self.config.hidden_size))
@@ -92,7 +93,8 @@ class EncoderCell(nn.Module):
         self.bi = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, 1, self.config.hidden_size))
 
         # left time forget gate
-        self.Ult = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size, self.config.hidden_size))
+        #self.Ult = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size, self.config.hidden_size))
+        self.Ult = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.bone_dim, self.config.hidden_size))
         self.Wtlt = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size * 3, self.config.hidden_size))
         self.Wslt = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size, self.config.hidden_size))
         self.Ztlt = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size, self.config.hidden_size))
@@ -100,7 +102,8 @@ class EncoderCell(nn.Module):
         self.blt = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, 1, self.config.hidden_size))
 
         # forward time forget gate
-        self.Uft = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size, self.config.hidden_size))
+        #self.Uft = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size, self.config.hidden_size))
+        self.Uft = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.bone_dim, self.config.hidden_size))
         self.Wtft = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size * 3, self.config.hidden_size))
         self.Wsft = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size, self.config.hidden_size))
         self.Ztft = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size, self.config.hidden_size))
@@ -108,7 +111,8 @@ class EncoderCell(nn.Module):
         self.bft = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, 1, self.config.hidden_size))
 
         # right time forget gate
-        self.Urt = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size, self.config.hidden_size))
+        self.Urt = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.bone_dim, self.config.hidden_size))
+        #self.Urt = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size, self.config.hidden_size))
         self.Wtrt = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size * 3, self.config.hidden_size))
         self.Wsrt = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size, self.config.hidden_size))
         self.Ztrt = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size, self.config.hidden_size))
@@ -116,7 +120,8 @@ class EncoderCell(nn.Module):
         self.brt = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, 1, self.config.hidden_size))
 
         # space forget gate
-        self.Us = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size, self.config.hidden_size))
+        #self.Us = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size, self.config.hidden_size))
+        self.Us = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.bone_dim, self.config.hidden_size))
         self.Wts = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size * 3, self.config.hidden_size))
         self.Wss = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size, self.config.hidden_size))
         self.Zts = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size, self.config.hidden_size))
@@ -124,7 +129,8 @@ class EncoderCell(nn.Module):
         self.bs = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, 1, self.config.hidden_size))
 
         # global time forgate gate
-        self.Ugt = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size, self.config.hidden_size))
+        #self.Ugt = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size, self.config.hidden_size))
+        self.Ugt = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.bone_dim, self.config.hidden_size))
         self.Wtgt = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size * 3, self.config.hidden_size))
         self.Wsgt = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size, self.config.hidden_size))
         self.Ztgt = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size, self.config.hidden_size))
@@ -132,7 +138,8 @@ class EncoderCell(nn.Module):
         self.bgt = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, 1, self.config.hidden_size))
 
         # global space fotgate gate
-        self.Ugs = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size, self.config.hidden_size))
+        #self.Ugs = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size, self.config.hidden_size))
+        self.Ugs = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.bone_dim, self.config.hidden_size))
         self.Wtgs = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size * 3, self.config.hidden_size))
         self.Wsgs = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size, self.config.hidden_size))
         self.Ztgs = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size, self.config.hidden_size))
@@ -140,7 +147,8 @@ class EncoderCell(nn.Module):
         self.bgs = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, 1, self.config.hidden_size))
 
         # output gate
-        self.Uo = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size, self.config.hidden_size))
+        #self.Uo = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size, self.config.hidden_size))
+        self.Uo = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.bone_dim, self.config.hidden_size))
         self.Wto = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size * 3, self.config.hidden_size))
         self.Wso = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size, self.config.hidden_size))
         self.Zto = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size, self.config.hidden_size))
@@ -148,7 +156,8 @@ class EncoderCell(nn.Module):
         self.bo = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, 1, self.config.hidden_size))
 
         # c_hat gate
-        self.Uc = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size, self.config.hidden_size))
+        #self.Uc = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size, self.config.hidden_size))
+        self.Uc = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.bone_dim, self.config.hidden_size))
         self.Wtc = torch.nn.Parameter( torch.randn(self.config.input_window_size - 1, self.config.hidden_size * 3, self.config.hidden_size))
         self.Wsc = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size, self.config.hidden_size))
         self.Ztc = torch.nn.Parameter(torch.randn(self.config.input_window_size - 1, self.config.hidden_size, self.config.hidden_size))
