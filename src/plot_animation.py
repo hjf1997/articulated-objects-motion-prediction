@@ -41,7 +41,7 @@ class plot_h36m(object):
         self.ax.grid(False)
         self.ax.w_xaxis.set_pane_color((1.0, 1.0, 0.0, 0.0))
         self.ax.w_yaxis.set_pane_color((1.0, 1.0, 0.0, 0.0))
-        #self.ax.w_zaxis.set_pane_color((1.0, 1.0, 0.0, 1.0))
+        #self.ax.w_zaxis.set_pane_color((1.0, 1.0, 0.0, 0.0))
         #self.ax.set_xlabel('x')
         #self.ax.set_ylabel('y')
         #self.ax.set_zlabel('z')
@@ -77,13 +77,13 @@ class plot_h36m(object):
         zdata_f = np.squeeze(self.joint_xyz_f[frame, :, 2])
 
         for i in range(len(self.chain)):
-            self.lns.append(self.ax.plot3D(xdata_f[self.chain[i][:],], ydata_f[self.chain[i][:],], zdata_f[self.chain[i][:],], linewidth=2.0, color='#f94e3e')) # red: prediction
+            #self.lns.append(self.ax.plot3D(xdata_f[self.chain[i][:],], ydata_f[self.chain[i][:],], zdata_f[self.chain[i][:],], linewidth=2.0, color='#f94e3e')) # red: prediction
             self.lns.append(self.ax.plot3D(xdata[self.chain[i][:],], ydata[self.chain[i][:],], zdata[self.chain[i][:],], linewidth=2.0, color='#0780ea')) # blue: ground truth
 
     def plot(self):
         ani = FuncAnimation(self.fig, self.update, frames=self.nframes, interval=40, repeat=False)
         #plt.title(self.filename, fontsize=16)
-        ani.save(self.filename + '.gif', writer='pillow')
+        #ani.save(self.filename + '.gif', writer='pillow')
         plt.show()
 
 

@@ -9,7 +9,7 @@ class TrainConfig(object):
     """Training Configurations"""
     input_window_size = 50  # Input window size during training
     output_window_size = 10  # Output window size during training
-    hidden_size = 20  # Number of hidden units for HMR
+    hidden_size = 18  # Number of hidden units for HMR
     batch_size = 32  # Batch size for training
     learning_rate = 0.001  # Learning rate
     max_epoch = 500  # Maximum training epochs
@@ -21,8 +21,9 @@ class TrainConfig(object):
     context_window = 1  # Context window size in HMR, this para only applies to HMR
     encoder_recurrent_steps = 10  # Number of recurrent steps in HMR/ST_HMR
     decoder_recurrent_steps = 2  # Number of recurrent steps in ST-HMR decoder expect kinematics LSTM
-    visualize = True
-    train_model = False
+    visualize = False                # visualize the predicted motion during testing
+    train_model = False         # train or predict
+    device_ids = [0]   #index of GPU used to train the model
 
     models_name = ['ERD', 'LSTM3lr', 'GRU', 'HMR', 'ST_HMR']
     model = models_name[4]

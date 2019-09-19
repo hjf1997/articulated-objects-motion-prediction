@@ -51,7 +51,7 @@ def train(config, checkpoint_dir):
     prediction_dataset, bone_length = choose(prediction=True)
     x_test, y_test, dec_in_test = prediction_dataset
 
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:"+str(config.device_ids[0]) if torch.cuda.is_available() else "cpu")
     print('Device {} will be used to save parameters'.format(device))
     torch.cuda.manual_seed(112858)
     net = choose_net(config)
@@ -61,7 +61,7 @@ def train(config, checkpoint_dir):
     print('Decoder param number:' + str(sum(p.numel() for p in net.decoder.parameters())))
     if torch.cuda.device_count() > 1:
         print("{} GPUs are usable!".format(str(torch.cuda.device_count())))
-    net = torch.nn.DataParallel(net)#, device_ids=[1, 2, 3]) # device_ids=[1, 2, 3]
+    net = torch.nn.DataParallel(net, device_ids=config.device_ids) # device_ids=[1, 2, 3]
     #net.load_state_dict(torch.load('./model/Epoch_84 Error0.8422.pth', map_location='cuda:0'))
 
     optimizer = optim.Adam(net.parameters(), lr=config.learning_rate)
@@ -199,6 +199,7 @@ def prediction(config, checkpoint_dir):
     #    print("Let's use {} GPUs!".format(str(torch.cuda.device_count())))
     net = torch.nn.DataParallel(net)
     dir = os.listdir(checkpoint_dir)
+    print('Load model from:' + checkpoint_dir + dir[-1])
     net.load_state_dict(torch.load(checkpoint_dir + dir[-1], map_location='cuda:0'))
     y_predict = {}
     with torch.no_grad():
@@ -227,10 +228,10 @@ def prediction(config, checkpoint_dir):
 
                 filename = act + '_' + str(i)
                 if config.visualize:
-                    # 蓝色是我的
+                    # 红色是我的
                     y_p_xyz = utils.fk(y_p, config, bone_length)
                     y_t_xyz = utils.fk(y_t, config, bone_length)
-                    pre_plot = plot_animation(y_t_xyz, y_p_xyz, config, filename)
+                    pre_plot = plot_animation(y_p_xyz, y_t_xyz, config, filename)
                     pre_plot.plot()
 
 
