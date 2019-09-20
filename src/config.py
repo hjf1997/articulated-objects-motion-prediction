@@ -16,12 +16,12 @@ class TrainConfig(object):
     training_size = 200  # Training iterations per epoch
     validation_size = 20  # Validation iterations per epoch
     restore = False  # Restore the trained weights or restart training from scratch
-    longterm = False  # Whether we are doing super longterm prediction
+    longterm = True  # Whether we are doing super longterm prediction
     keep_prob = 0.95  # Keep probability for RNN cell weights
     context_window = 1  # Context window size in HMR, this para only applies to HMR
     encoder_recurrent_steps = 10  # Number of recurrent steps in HMR/ST_HMR
     decoder_recurrent_steps = 2  # Number of recurrent steps in ST-HMR decoder expect kinematics LSTM
-    visualize = False                # visualize the predicted motion during testing
+    visualize = True                # visualize the predicted motion during testing
     train_model = False         # train or predict
     device_ids = [0]   #index of GPU used to train the model
 

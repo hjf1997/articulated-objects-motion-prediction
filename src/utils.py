@@ -5,6 +5,7 @@ import time
 import numpy as np
 import copy
 import torch
+import os
 
 
 def create_directory(config):
@@ -31,6 +32,15 @@ def create_directory(config):
     output_dir = './output/' + folder_dir
 
     return [checkpoint_dir, output_dir]
+
+def get_file_list(file_path):
+    dir_list = os.listdir(file_path)
+    if not dir_list:
+        return
+    else:
+        dir_list = sorted(dir_list, key=lambda x: os.path.getmtime(os.path.join(file_path, x)))
+        # print(dir_list)
+        return dir_list
 
 def expmap2rotmat(A):
     theta = np.linalg.norm(A)

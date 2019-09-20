@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 class LSTM3lr(nn.Module):
@@ -53,7 +54,7 @@ class LSTM3lr_EncoderCell(nn.Module):
 
                 h[i][:, frame, :], c_h[i][:, frame, :] = cell(input, (
                 h[i][:, frame - 1, :].clone(), c_h[i][:, frame - 1, :].clone()))
-                output[i][:, frame, :] = torch.dropout(h[i][:, frame, :].clone(), p=self.config.keep_prob, train=train)
+                output[i][:, frame, :] = F.dropout(h[i][:, frame, :].clone(), p=self.config.keep_prob, train=train)
         enc_state = ((torch.squeeze(h[i][:, self.config.input_window_size - 1, :]),
                       torch.squeeze(c_h[i][:, self.config.input_window_size - 1, :])) for i in
                      range(self.number_of_layers))

@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 class ERD(nn.Module):
@@ -60,7 +61,7 @@ class ERD_EncoderCell(nn.Module):
                     input = torch.squeeze(fc[i])
                 else:
                     # 这里的input需要进行dropout
-                    input = torch.dropout(torch.squeeze(h[i - 1][frame, :, :]), p=self.config.keep_prob, train=train)
+                    input = F.dropout(torch.squeeze(h[i - 1][frame, :, :]), p=self.config.keep_prob, train=train)
                 # 第i层第frame+1帧的h值们
                 if (frame == 0):
                     h[i][frame, :, :], c_h[i][frame, :, :] = cell(input)

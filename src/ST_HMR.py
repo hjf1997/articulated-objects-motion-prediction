@@ -262,8 +262,8 @@ class EncoderCell(nn.Module):
 
         h = o_n * torch.tanh(c_h)
 
-        c_h = torch.dropout(c_h, self.config.keep_prob, train)
-        h = torch.dropout(h, self.config.keep_prob, train)
+        c_h = F.dropout(c_h, self.config.keep_prob, train)
+        h = F.dropout(h, self.config.keep_prob, train)
         """Update g_t"""
         g_t_hat = torch.mean(h, 1, keepdim=True).expand_as(h)
         f_gtf_n = torch.sigmoid(torch.matmul(g_t, self.Wgtf) + torch.matmul(g_t_hat, self.Zgtf) + self.bgtf)

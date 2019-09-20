@@ -234,8 +234,8 @@ class HMR_EncoderCell(nn.Module):
             final_cell_states.append(c_h)
             final_global_states.append(g)
 
-            h = torch.dropout(h, p=self.config.keep_prob, train=train)
-            c_h = torch.dropout(c_h, p=self.config.keep_prob, train=train)
+            h = F.dropout(h, p=self.config.keep_prob, training=train)
+            c_h = F.dropout(c_h, p=self.config.keep_prob, training=train)
 
         hidden_states = final_hidden_states[-1]
         cell_states = final_cell_states[-1]

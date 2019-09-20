@@ -198,7 +198,7 @@ def prediction(config, checkpoint_dir):
     #if torch.cuda.device_count() > 1:
     #    print("Let's use {} GPUs!".format(str(torch.cuda.device_count())))
     net = torch.nn.DataParallel(net)
-    dir = os.listdir(checkpoint_dir)
+    dir = utils.get_file_list(checkpoint_dir)
     print('Load model from:' + checkpoint_dir + dir[-1])
     net.load_state_dict(torch.load(checkpoint_dir + dir[-1], map_location='cuda:0'))
     y_predict = {}
@@ -237,7 +237,7 @@ def prediction(config, checkpoint_dir):
 
 if __name__ == '__main__':
 
-    config = config.TrainConfig('Human', 'lie', 'all')
+    config = config.TrainConfig('Human', 'lie', 'walking')
     checkpoint_dir, output_dir = utils.create_directory(config)
     if config.train_model is True:
         train(config, checkpoint_dir)
