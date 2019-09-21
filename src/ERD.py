@@ -61,14 +61,13 @@ class ERD_EncoderCell(nn.Module):
                     input = torch.squeeze(fc[i])
                 else:
                     # 这里的input需要进行dropout
-                    input = F.dropout(torch.squeeze(h[i - 1][frame, :, :]), p=self.config.keep_prob, train=train)
+                    input = F.dropout(torch.squeeze(h[i - 1][frame, :, :]), p=self.config.keep_prob, training=train)
                 # 第i层第frame+1帧的h值们
                 if (frame == 0):
-                    h[i][frame, :, :], c_h[i][frame, :, :] = cell(input)
+                    h[i][frame, :, :], c_h[i][frame, :, :] = cell(input.clone())
                 else:
-                    h[i][frame, :, :], c_h[i][frame, :, :] = cell(input, (torch.squeeze(h[i][frame - 1, :, :].clone())
-                                                                          , torch.squeeze(
-                        c_h[i][frame - 1, :, :]).clone()))
+                    h[i][frame, :, :], c_h[i][frame, :, :] = cell(input.clone(), (torch.squeeze(h[i][frame - 1, :, :].clone())
+                                                                          , torch.squeeze(c_h[i][frame - 1, :, :].clone())))
         enc_state = [(torch.squeeze(h[0][len(fc) - 1, :, :]), torch.squeeze(c_h[0][len(fc) - 1, :, :])),
                      (torch.squeeze(h[1][len(fc) - 1, :, :]), torch.squeeze(c_h[1][len(fc) - 1, :, :]))]
         return enc_state

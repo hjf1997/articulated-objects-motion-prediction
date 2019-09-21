@@ -19,6 +19,11 @@ def loss(prediction, y, bone, config):
             y = utils.prepare_loss(y, config.data_mean.shape[0], config.dim_to_ignore)
             prediction = utils.prepare_loss(prediction, config.data_mean.shape[0], config.dim_to_ignore)
         loss = kinematicslie_loss(prediction, y, bone, config)
+    elif config.loss is 'HMRlie':
+        if config.dataset == 'Human':
+            y = utils.prepare_loss(y, config.data_mean.shape[0], config.dim_to_ignore)
+            prediction = utils.prepare_loss(prediction, config.data_mean.shape[0], config.dim_to_ignore)
+        loss = HMRlie_loss(prediction, y, bone, config)
 
     return loss
 
@@ -29,6 +34,28 @@ def l2_loss(prediction, y):
     loss = torch.mean(loss)
     return loss
 
+def HMRlie_loss(prediction, y, bone, config):
+    """
+
+    :param prediction:
+    :param y:
+    :param bone:
+    :param config:
+    :return:
+    """
+
+    chainlength = bone.shape[0]
+    weights = torch.zeros(chainlength * 3, device=prediction.device)
+    for j in range(chainlength):
+            weights[j*3:j*3+3] = (chainlength - j) * bone[j][0]
+
+    weights = weights / weights.max()
+    loss = torch.sub(y, prediction) ** 2
+    loss = torch.mean(loss, dim=[0, 1])
+    loss = loss * weights
+    loss = torch.mean(loss)
+
+    return loss
 
 def linearizedlie_loss(prediction, y, bone, config):
     """

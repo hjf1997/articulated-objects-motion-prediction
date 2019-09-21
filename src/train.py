@@ -161,7 +161,8 @@ def prediction(config, checkpoint_dir):
     # generate data loader
     if config.dataset == 'Mouse':
         config.output_window_size = 75
-    config.output_window_size = 100
+    else:
+        config.output_window_size = 100
 
     choose = DatasetChooser(config)
     if config.dataset is 'Human':
@@ -237,7 +238,7 @@ def prediction(config, checkpoint_dir):
 
 if __name__ == '__main__':
 
-    config = config.TrainConfig('Human', 'lie', 'walking')
+    config = config.TrainConfig('Human', 'lie', 'eating')
     checkpoint_dir, output_dir = utils.create_directory(config)
     if config.train_model is True:
         train(config, checkpoint_dir)

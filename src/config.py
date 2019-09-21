@@ -10,14 +10,14 @@ class TrainConfig(object):
     input_window_size = 50  # Input window size during training
     output_window_size = 10  # Output window size during training
     hidden_size = 18  # Number of hidden units for HMR
-    batch_size = 32  # Batch size for training
+    batch_size = 16  # Batch size for training
     learning_rate = 0.001  # Learning rate
     max_epoch = 500  # Maximum training epochs
     training_size = 200  # Training iterations per epoch
     validation_size = 20  # Validation iterations per epoch
     restore = False  # Restore the trained weights or restart training from scratch
     longterm = True  # Whether we are doing super longterm prediction
-    keep_prob = 0.95  # Keep probability for RNN cell weights
+    keep_prob = 0.0  # Keep probability for RNN cell weights
     context_window = 1  # Context window size in HMR, this para only applies to HMR
     encoder_recurrent_steps = 10  # Number of recurrent steps in HMR/ST_HMR
     decoder_recurrent_steps = 2  # Number of recurrent steps in ST-HMR decoder expect kinematics LSTM
@@ -28,7 +28,7 @@ class TrainConfig(object):
     models_name = ['ERD', 'LSTM3lr', 'GRU', 'HMR', 'ST_HMR']
     model = models_name[4]
 
-    loss_name = ['l2', 'lie', 'kinematicslie']
+    loss_name = ['l2', 'lie', 'kinematicslie', 'HMRlie']
     loss = loss_name[1]
     """Only suitable for ST_HMR"""
     share_encoder_weights = True  # share encoder weight at each recurrent step, this param only applies to ST_HMR

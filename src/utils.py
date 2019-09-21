@@ -112,7 +112,11 @@ def mean_euler_error(config, action, y_predict, y_test):
     return mme, mme_mean
 
 
-def forward_kinematics(data, config, bone):
+def forward_kinematics(data, config, bone_):
+
+    # this step is for forward
+    bone = np.zeros([bone_.shape[0]+1, bone_.shape[1]])
+    bone[1:, :] = bone_
 
     nframes = data.shape[0]
     data = data.reshape([nframes, -1, 3])
