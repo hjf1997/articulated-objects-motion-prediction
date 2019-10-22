@@ -5,3 +5,6 @@ data/
 src/__pycache__/
 src/model/
 src/pre_LSTN.py
+/src/ERD.py
+/src/GRU.py
+/src/LSTM3lr.py

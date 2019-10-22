@@ -20,9 +20,9 @@ def create_directory(config):
     if config.model == 'HMR':
         folder_dir += '_RecurrentSteps=' + str(config.encoder_recurrent_steps) + '_' + 'ContextWindow=' + str(
             config.context_window) + '_' + 'hiddenSize=' + str(config.hidden_size)
-    if config.model == 'ST_HMR':
+    if config.model == 'ST_HRN':
         folder_dir += '_RecurrentSteps=' + str(config.encoder_recurrent_steps) + '_hiddenSize=' + str(config.hidden_size) \
-                      + '_decoder_name=' + str(config.decoder) + '_dropout=' + str(config.keep_prob)
+                      + '_decoder_name=' + str(config.decoder)
 
     folder_dir += '/' + config.filename + '/'
     folder_dir += 'inputWindow=' + str(config.input_window_size) + '_outputWindow=' + str(

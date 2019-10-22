@@ -16,41 +16,41 @@ class TrainConfig(object):
     training_size = 200  # Training iterations per epoch
     validation_size = 20  # Validation iterations per epoch
     restore = False  # Restore the trained weights or restart training from scratch
-    longterm = True  # Whether we are doing super longterm prediction
-    keep_prob = 0.0  # Keep probability for RNN cell weights
+    longterm = False  # Whether we are doing super longterm prediction
+    keep_prob = 0.6  # Keep probability for RNN cell weights
     context_window = 1  # Context window size in HMR, this para only applies to HMR
-    encoder_recurrent_steps = 10  # Number of recurrent steps in HMR/ST_HMR
+    encoder_recurrent_steps = 10  # Number of recurrent steps in HMR/ST_HRN
     decoder_recurrent_steps = 2  # Number of recurrent steps in ST-HMR decoder expect kinematics LSTM
-    visualize = True                # visualize the predicted motion during testing
-    train_model = False         # train or predict
-    device_ids = [0]   #index of GPU used to train the model
+    visualize = False               # visualize the predicted motion during testing
 
-    models_name = ['ERD', 'LSTM3lr', 'GRU', 'HMR', 'ST_HMR']
-    model = models_name[4]
+    models_name = ['HMR', 'ST_HRN']
+    model = models_name[1]
 
-    loss_name = ['l2', 'lie', 'kinematicslie', 'HMRlie']
+    loss_name = ['l2', 'weightlie', 'HMRlie']
     loss = loss_name[1]
-    """Only suitable for ST_HMR"""
-    share_encoder_weights = True  # share encoder weight at each recurrent step, this param only applies to ST_HMR
+    """Only suitable for ST_HRN"""
+    share_encoder_weights = True  # share encoder weight at each recurrent step, this param only applies to ST_HRN
     bone_dim = 3  # dimension of one bone representation, static in all datasets
-    decoder_name = ['lstm', 'st_lstm', 'Kinematics_lstm']
-    decoder = decoder_name[2]
+    decoder_name = ['lstm', 'Kinematics_lstm']
+    decoder = decoder_name[1]
 
-    def __init__(self, dataset, datatype, action):
+    def __init__(self, dataset, datatype, action, gpu, training, visualize):
+        self.device_ids = gpu  # index of GPU used to train the model
+        self.train_model = training  # train or predict
+        self.visualize = visualize  # visualize the predicted motion during testing
         self.dataset = dataset
         self.datatype = datatype
         self.filename = action
         # number of bones
         if dataset == 'Mouse':
             self.nbones = 4
-        elif dataset == 'Fish':
-            self.nbones = 20
+            if self.decoder == 'Kinematics_lstm':
+                self.decoder = self.decoder_name[0]
+                print('You chose Kinematics_lstm as decoder, but lstm decoder is compatible for mouse dataset! Correct it automatically!!')
         elif dataset == 'Human':
             self.nbones = 18
-        elif dataset == 'CSL':
-            self.nbones = 16#24
 
-        """Define kinematic chain configurations based on dataset class. Don't modify the code below"""
+        """Define kinematic chain configurations based on dataset class."""
         if self.dataset == 'Fish':
             self.filename = 'default'
             self.chain_config = [np.arange(0, 21)]
@@ -75,17 +75,4 @@ class TrainConfig(object):
                           [34, 35, 36, 37, 38, 39, 40, 41, 42, 43],
                           [44, 45, 46, 47, 48, 49, 50, 51, 52, 53]]
 
-        elif self.dataset == 'CSL':
-            self.chain_config = [np.array([0, 1, 2, 3, 4]),  # leg
-                                 np.array([5, 6, 7, 8, 9]),  # leg
-                                 np.array([10, 11, 12, 13, 14]),  # spine
-                                 np.array([15, 16, 17, 18, 19, 20, 21]),  # arm
-                                 np.array([22, 23, 24, 25, 26, 27, 28])]  # arm
-            self.chain_loss_config = [np.array([0, 1, 2, 3, 4 ]),  # spine
-                                 np.array([5, 6, 7, 8, 9, 10]),  # arm
-                                 np.array([11, 12, 13, 14, 15])]  # arm
-            self.training_chain_length = [12, 18, 18]
-            self.index = [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-                          [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29],
-                          [30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47]]
 

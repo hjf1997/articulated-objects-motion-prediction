@@ -136,49 +136,6 @@ class HumanDataset(Dataset):
         return sample
 
 
-class FishDataset(Dataset):
-
-    def __init__(self, config, train=True):
-
-        self.config = config
-        self.train = train
-        self.lie_tsfm = LieTsfm(config)
-        self.formatdata = FormatData(config)
-        if config.datatype == 'lie':
-            train_path = './data/Fish/Train/train_lie/'
-            tail = '_lie.mat'
-        elif config.datatype == 'xyz':
-            train_path = './data/Fish/Train/train_xyz/'
-            tail = '_xyz.mat'
-        if train:
-            subjects = ['S1', 'S2', 'S3', 'S4', 'S5', 'S7', 'S8']
-        else:
-            subjects = ['S6']
-
-        set = []
-        for id in subjects:
-            filename = train_path + id + tail
-            rawdata = sio.loadmat(filename)
-            rawdata = rawdata[list(rawdata.keys())[3]]
-            set.append(rawdata)
-        self.data = set
-
-    def __getitem__(self, idx):
-
-        if self.config.datatype == 'lie':
-            sample = self.data[idx][:, :-1, :3].reshape(self.data[idx].shape[0], -1)
-
-            # sample = self.lie_tsfm(self.data[idx])
-        elif self.config.datatype == 'xyz':
-            pass
-        sample = self.formatdata(sample, False)
-        return sample
-
-    def __len__(self):
-
-        return len(self.data)
-
-
 class MouseDataset(Dataset):
 
     def __init__(self, config, train):
@@ -221,74 +178,6 @@ class MouseDataset(Dataset):
         return len(self.data)
 
 
-class CSLDataset(Dataset):
-
-    def __init__(self, config, train=True):
-        self.config = config
-        self.train = train
-        self.lie_tsfm = LieTsfm(config)
-        self.formatdata = FormatData(config)
-        if config.datatype == 'lie':
-            train_path = './data/CSL/Train/train_lie/'
-            tail = '_lie.mat'
-        elif config.datatype == 'xyz':
-            train_path = './data/CSL/Train/train_xyz/'
-            tail = '_xyz.mat'
-        if train:
-            subjects = ["S1", "S2", "S3", "S4"]
-        else:
-            subjects = ["S5"]
-
-        if config.filename == 'all':
-            actions = ['Circle', 'Square', 'Triangle']
-        else:
-            actions = [config.filename]
-
-        set = []
-        #complete_train = []
-        # 这里应该还要遍历一个动作list的，测试就先不写
-        for id in subjects:
-            for action in actions:
-                for i in range(5):
-                    filename = '{0}/{1}_{2}_{3}_lie.mat'.format(train_path, id, action, i + 1)
-                    rawdata = sio.loadmat(filename)
-                    rawdata = rawdata[list(rawdata.keys())[3]]
-                    rawdata = np.delete(rawdata[:, :, :3], [4, 11, 18], axis=1)
-                    #rawdata = np.delete(rawdata[:, :, :3], [5, 11, 16, 21, 26], axis=1)
-                    rawdata = rawdata.reshape(rawdata.shape[0], -1)
-                    set.append(rawdata)
-
-        #     if len(complete_train) == 0:
-        #         complete_train = copy.deepcopy(set[-1])
-        #     else:
-        #         complete_train = np.append(complete_train, set[-1], axis=0)
-        #
-        # if not train and config.data_mean is None:
-        #     print('Load train dataset first!')
-        #
-        # if train and config.datatype == 'lie':
-        #     data_mean, data_std, dim_to_ignore, dim_to_use = utils.normalization_stats(complete_train)
-        #     config.data_mean = data_mean
-        #     config.data_std = data_std
-        #     config.dim_to_ignore = dim_to_ignore
-        #     config.dim_to_use = dim_to_use
-
-        #set = utils.normalize_data(set, config.data_mean, config.data_std, list(range(0, 48)))
-
-        self.data = set
-
-    def __getitem__(self, idx):
-        if self.config.datatype == 'lie':
-            sample = self.data[idx]
-        elif self.config.datatype == 'xyz':
-            pass
-        sample = self.formatdata(sample, False)
-        return sample
-
-    def __len__(self):
-        return len(self.data)
-
-
 class AnimalPredictionDataset(object):
 
     def __init__(self, config):
@@ -299,8 +188,6 @@ class AnimalPredictionDataset(object):
             y = []
             if self.config.dataset == 'Mouse':
                 set_name = 'Mouse'
-            elif self.config.dataset == 'Fish':
-                set_name = 'Fish'
             for i in range(8):
                 x_filename = './data/' + set_name + '/Test/x_test_lie/test_' + str(i) + '_lie.mat'
                 y_filename = './data/' + set_name + '/Test/y_test_lie/test_' + str(i) + '_lie.mat'
@@ -316,8 +203,6 @@ class AnimalPredictionDataset(object):
 
                 y_data = y_rawdata[:, :-1, :3].reshape(y_rawdata.shape[0], -1)
                 y.append(y_data)
-        elif config.datatype == 'xyz':
-            pass
 
         x = np.array(x)
         y = np.array(y)
@@ -594,7 +479,50 @@ class FishPredictionDataset(Dataset):
         sample = self.formatdata(x_sample, y_sample)
         return sample
 
+# The class below is discarded
+class FishDataset(Dataset):
 
+    def __init__(self, config, train=True):
+
+        self.config = config
+        self.train = train
+        self.lie_tsfm = LieTsfm(config)
+        self.formatdata = FormatData(config)
+        if config.datatype == 'lie':
+            train_path = './data/Fish/Train/train_lie/'
+            tail = '_lie.mat'
+        elif config.datatype == 'xyz':
+            train_path = './data/Fish/Train/train_xyz/'
+            tail = '_xyz.mat'
+        if train:
+            subjects = ['S1', 'S2', 'S3', 'S4', 'S5', 'S7', 'S8']
+        else:
+            subjects = ['S6']
+
+        set = []
+        for id in subjects:
+            filename = train_path + id + tail
+            rawdata = sio.loadmat(filename)
+            rawdata = rawdata[list(rawdata.keys())[3]]
+            set.append(rawdata)
+        self.data = set
+
+    def __getitem__(self, idx):
+
+        if self.config.datatype == 'lie':
+            sample = self.data[idx][:, :-1, :3].reshape(self.data[idx].shape[0], -1)
+
+            # sample = self.lie_tsfm(self.data[idx])
+        elif self.config.datatype == 'xyz':
+            pass
+        sample = self.formatdata(sample, False)
+        return sample
+
+    def __len__(self):
+
+        return len(self.data)
+
+# The class below is discarded
 class CSLPredictionDataset(object):
 
     def __init__(self, config):
@@ -642,3 +570,71 @@ class CSLPredictionDataset(object):
     def get_data(self):
 
         return [self.x_test_dict, self.y_test_dict, self.dec_in_test_dict]
+
+# The class below is discarded
+class CSLDataset(Dataset):
+
+    def __init__(self, config, train=True):
+        self.config = config
+        self.train = train
+        self.lie_tsfm = LieTsfm(config)
+        self.formatdata = FormatData(config)
+        if config.datatype == 'lie':
+            train_path = './data/CSL/Train/train_lie'
+            tail = '_lie.mat'
+        elif config.datatype == 'xyz':
+            train_path = './data/CSL/Train/train_xyz'
+            tail = '_xyz.mat'
+        if train:
+            subjects = ["S1", "S2", "S3", "S4", "S5"]
+        else:
+            subjects = ["S6"]
+
+        if config.filename == 'all':
+            actions = ['Circle', 'Square', 'Triangle']
+        else:
+            actions = [config.filename]
+
+        set = []
+        #complete_train = []
+        # 这里应该还要遍历一个动作list的，测试就先不写
+        for id in subjects:
+            for action in actions:
+                for i in range(5):
+                    filename = '{0}/{1}_{2}_{3}_lie.mat'.format(train_path, id, action, i + 1)
+                    rawdata = sio.loadmat(filename)
+                    rawdata = rawdata[list(rawdata.keys())[3]]
+                    rawdata = np.delete(rawdata[:, :, :3], [4, 11, 18], axis=1)
+                    #rawdata = np.delete(rawdata[:, :, :3], [5, 11, 16, 21, 26], axis=1)
+                    rawdata = rawdata.reshape(rawdata.shape[0], -1)
+                    set.append(rawdata)
+
+        #     if len(complete_train) == 0:
+        #         complete_train = copy.deepcopy(set[-1])
+        #     else:
+        #         complete_train = np.append(complete_train, set[-1], axis=0)
+        #
+        # if not train and config.data_mean is None:
+        #     print('Load train dataset first!')
+        #
+        # if train and config.datatype == 'lie':
+        #     data_mean, data_std, dim_to_ignore, dim_to_use = utils.normalization_stats(complete_train)
+        #     config.data_mean = data_mean
+        #     config.data_std = data_std
+        #     config.dim_to_ignore = dim_to_ignore
+        #     config.dim_to_use = dim_to_use
+
+        #set = utils.normalize_data(set, config.data_mean, config.data_std, list(range(0, 48)))
+
+        self.data = set
+
+    def __getitem__(self, idx):
+        if self.config.datatype == 'lie':
+            sample = self.data[idx]
+        elif self.config.datatype == 'xyz':
+            pass
+        sample = self.formatdata(sample, False)
+        return sample
+
+    def __len__(self):
+        return len(self.data)
