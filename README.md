@@ -27,7 +27,7 @@ Please follow the introduction below to reproduce my results .
 
 ## Reproduce our results
 
-We save our model in the [checkpoint]( https://github.com/p0werHu/human-motion-prediction/tree/master/src/checkpoint ) fold. Our code will search a checkpoint automatically according to your settings. 
+We save our model in the [checkpoint]( https://github.com/p0werHu/human-motion-prediction/tree/master/src/checkpoint ) folder. Our code will search a checkpoint automatically according to your settings. 
 
 ```shell
 cd src
