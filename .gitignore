@@ -1,5 +1,5 @@
 # Created by .ignore support plugin (hsz.mobi)
-data/
+
 #checkpoint/
 .idea/
 src/__pycache__/
@@ -8,3 +8,12 @@ src/pre_LSTN.py
 /src/ERD.py
 /src/GRU.py
 /src/LSTM3lr.py
+
+/src/data/CSL/
+/src/data/Fish/
+/src/data/h3.6m/Train/
+/src/data/h3.6m/Test/
+
+/src/data/Mouse/Test/
+/src/data/Mouse/Raw/
+/src/data/Mouse/Train/
