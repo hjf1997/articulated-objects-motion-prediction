@@ -1,15 +1,20 @@
 # Generating Recognizable Long-term Articulated Objects Motion via Spatio-Temporal Hierarchical Recurrent Network 
-This is the pytorch code of my paper Generating Recognizable Long-term Articulated Objects Motion via Spatio-Temporal Hierarchical Recurrent Network.  
+This is the pytorch version, python code of our paper Generating Recognizable Long-term Articulated Objects Motion via Spatio-Temporal Hierarchical Recurrent Network.  
 Please follow the introduction below to reproduce my results .   
 
 ## Required packages
 
 * Anaconda is highly recommend 
-* Pytorch 1.2
-* Matplotlib 3.0.1
-*  FFMPEG 
 
-# Dataset download
+* Pytorch >= 1.2
+
+* Matplotlib = 3.0.1
+
+* FFMPEG 
+
+  Note that any Matplotlib version > 3.0.1 cannot guarantee the correct operation of the program due to some compatibility issues.
+
+## Dataset download
 
 * H3.6m dataset
 
@@ -24,7 +29,7 @@ Please follow the introduction below to reproduce my results .
   cd src
   sh ./data/Mouse/download_mouse.sh
   ```
-
+  
 ## Reproduce our results
 
 We save our model in the [checkpoint]( https://github.com/p0werHu/human-motion-prediction/tree/master/src/checkpoint ) folder. Our code will search a checkpoint automatically according to your settings. 
@@ -57,6 +62,12 @@ setting | default | values | help
 
 For more detail configurations, you could refer [config.py]( https://github.com/p0werHu/human-motion-prediction/blob/master/src/config.py )
 
+## Acknowledge 
+
+Some code is adopted or modified from [BII-wushuang]( https://github.com/BII-wushuang/Lie-Group-Motion-Prediction ), [una-dinosauria]( https://github.com/una-dinosauria/human-motion-prediction ), and [asheshjain399]( https://github.com/asheshjain399/RNNexp ).   
+
+Thanks for their great workings! :)
+
 ## Citation
 
 If you find this useful, please cite our work as follows:
@@ -65,7 +76,8 @@ If you find this useful, please cite our work as follows:
 Not available.
 ```
 
-
+## Questions
+If you have any question, you can contact me with *issues* or email: hjf@cqu.edu.cn
 
 
 
