@@ -1,6 +1,6 @@
-# Generating Recognizable Long-term Articulated Objects Motion via Spatio-Temporal Hierarchical Recurrent Network 
-This is the pytorch version, python code of our paper Generating Recognizable Long-term Articulated Objects Motion via Spatio-Temporal Hierarchical Recurrent Network.  
-Please follow the introduction below to reproduce my results .   
+# Predicting Long-Term Skeletal Motions by a Spatio-Temporal Hierarchical Recurrent Network
+This is the pytorch version, python code of our paper Predicting Long-Term Skeletal Motions by a Spatio-Temporal Hierarchical Recurrent Network.  
+Please follow the introduction below to reproduce our results .   
 
 ## Required packages
 
@@ -77,7 +77,7 @@ Not available.
 ```
 
 ## Questions
-If you have any question, you can contact me with *issues* or email: hjf@cqu.edu.cn
+If you have any question or bug in my code, you can contact me with *issues* or email: hjf@cqu.edu.cn
 
 
 
