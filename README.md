@@ -1,4 +1,5 @@
 # Predicting Long-Term Skeletal Motions by a Spatio-Temporal Hierarchical Recurrent Network
+## Our paper is available at [arXiv](https://arxiv.org/abs/1911.02404)  
 This is the pytorch version, python code of our paper Predicting Long-Term Skeletal Motions by a Spatio-Temporal Hierarchical Recurrent Network.  
 Please follow the introduction below to reproduce our results .   
 
