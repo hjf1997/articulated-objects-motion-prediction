@@ -13,7 +13,7 @@ def loss(prediction, y, bone, config):
         if config.dataset == 'Human':
             y = utils.prepare_loss(y, config.data_mean.shape[0], config.dim_to_ignore)
             prediction = utils.prepare_loss(prediction, config.data_mean.shape[0], config.dim_to_ignore)
-        loss = linearizedlie_loss(prediction, y, bone, config)
+        loss = weightlie_loss(prediction, y, bone, config)
     elif config.loss == 'HMRlie':
         if config.dataset == 'Human':
             y = utils.prepare_loss(y, config.data_mean.shape[0], config.dim_to_ignore)
@@ -52,9 +52,9 @@ def HMRlie_loss(prediction, y, bone, config):
 
     return loss
 
-def linearizedlie_loss(prediction, y, bone, config):
+def weightlie_loss(prediction, y, bone, config):
     """
-    Lie loss
+    weightlielie loss
     :param prediction:
     :param y:
     :param bone:
