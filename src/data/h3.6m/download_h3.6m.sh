@@ -1,1 +1,1 @@
-cd ./data/h3.6m && wget -O ./data/h3.6m/h3.6m.zip https://doc-0o-54-docs.googleusercontent.com/docs/securesc/ha0ro937gcuc7l7deffksulhg5h7mbp1/ohn15g850nbd4liuomv4hkumpc1a8d5b/1571832000000/14783120680387677110/*/1qV0lYmXeVTeWJtjgqurGY-EuwthOd01x?e=download && unzip h3.6m.zip && rm h3.6m.zip && cd ../../
+cd ./data/h3.6m && wget -O ./data/h3.6m/h3.6m.zip http://download.234432.xyz/h3.6m.zip && unzip h3.6m.zip && rm h3.6m.zip && cd ../../
