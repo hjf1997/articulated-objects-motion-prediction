@@ -105,7 +105,7 @@ def mean_euler_error(config, action, y_predict, y_test):
     print("\n" + action)
     toprint_idx = np.array([1, 3, 7, 9, 13, 15, 17, 24])
     idx = np.where(toprint_idx < len(mme))[0]
-    toprint_list = ["& {:.2f} ".format(mme[toprint_idx[i]]) for i in idx]
+    toprint_list = ["& {:.3f} ".format(mme[toprint_idx[i]]) for i in idx]
     print("".join(toprint_list))
 
     mme_mean = np.mean(mme[toprint_idx[idx]])
