@@ -6,6 +6,8 @@ Please follow the introduction below to reproduce our results .
 
 Our paper is accepted by the 24th European Conference on Artificial Intelligence (ECAI2020) and the submitted version is available at [arXiv](https://arxiv.org/abs/1911.02404). We will release the final version later.
 
+See the accepted papers [here](http://ecai2020.eu/accepted-papers/).
+
 
 ## Required packages
 
