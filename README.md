@@ -8,6 +8,8 @@ Our paper is accepted by the 24th European Conference on Artificial Intelligence
 
 See the accepted papers [here](http://ecai2020.eu/accepted-papers/).
 
+See the published version [here](http://ebooks.iospress.nl/publication/55206)
+
 
 ## Required packages
 
@@ -73,7 +75,7 @@ For more detail configurations, you could refer [config.py]( https://github.com/
 
 Some code is adopted or modified from [BII-wushuang]( https://github.com/BII-wushuang/Lie-Group-Motion-Prediction ), [una-dinosauria]( https://github.com/una-dinosauria/human-motion-prediction ), and [asheshjain399]( https://github.com/asheshjain399/RNNexp ).   
 
-Thanks for their great workings! :)
+Thanks for their great works! :)
 
 ## Citation
 
